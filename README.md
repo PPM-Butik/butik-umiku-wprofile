@@ -146,31 +146,10 @@ Mendukung dark/light mode switching menggunakan next-themes dengan transisi yang
 
 Terintegrasi dengan Recharts untuk visualisasi data yang menarik dan interaktif.
 
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. Push code ke GitHub
-2. Import project di Vercel
-3. Set environment variables
-4. Deploy
-
-### Manual Deployment
-
-```bash
-npm run build
-npm run start
-```
-
-
-
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) untuk framework yang luar biasa
 - [Tailwind CSS](https://tailwindcss.com/) untuk styling yang efisien
 - [Radix UI](https://www.radix-ui.com/) untuk komponen UI yang accessible
-- [Vercel](https://vercel.com/) untuk platform deployment yang mudah
 
 ---
-
-Dibuat dengan ❤️ untuk Butik Umiku
