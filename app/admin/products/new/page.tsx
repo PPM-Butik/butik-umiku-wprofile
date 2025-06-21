@@ -1,124 +1,129 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Plus, X, Upload, Save } from 'lucide-react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Plus, X, Save } from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 export default function NewProductPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    originalPrice: '',
-    category: '',
-    subcategory: '',
-    stock: '',
-    featured: false
+    name: "",
+    description: "",
+    price: "",
+    originalPrice: "",
+    category: "",
+    subcategory: "",
+    stock: "",
+    featured: false,
   });
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
-  const [newSize, setNewSize] = useState('');
-  const [newColor, setNewColor] = useState('');
-  const [newTag, setNewTag] = useState('');
-  const [newImage, setNewImage] = useState('');
+  const [newSize, setNewSize] = useState("");
+  const [newColor, setNewColor] = useState("");
+  const [newTag, setNewTag] = useState("");
 
   const categories = [
-    { value: 'Gamis', subcategories: ['Syari', 'Casual', 'Formal'] },
-    { value: 'Hijab', subcategories: ['Voal', 'Satin', 'Chiffon', 'Jersey'] },
-    { value: 'Tunik', subcategories: ['Casual', 'Formal', 'Daily'] },
-    { value: 'Mukena', subcategories: ['Premium', 'Regular', 'Travel'] },
-    { value: 'Khimar', subcategories: ['Syari', 'Casual', 'Premium'] },
-    { value: 'Abaya', subcategories: ['Casual', 'Formal', 'Premium'] }
+    { value: "Gamis", subcategories: ["Syari", "Casual", "Formal"] },
+    { value: "Hijab", subcategories: ["Voal", "Satin", "Chiffon", "Jersey"] },
+    { value: "Tunik", subcategories: ["Casual", "Formal", "Daily"] },
+    { value: "Mukena", subcategories: ["Premium", "Regular", "Travel"] },
+    { value: "Khimar", subcategories: ["Syari", "Casual", "Premium"] },
+    { value: "Abaya", subcategories: ["Casual", "Formal", "Premium"] },
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const addSize = () => {
     if (newSize && !sizes.includes(newSize)) {
       setSizes([...sizes, newSize]);
-      setNewSize('');
+      setNewSize("");
     }
   };
 
   const removeSize = (size: string) => {
-    setSizes(sizes.filter(s => s !== size));
+    setSizes(sizes.filter((s) => s !== size));
   };
 
   const addColor = () => {
     if (newColor && !colors.includes(newColor)) {
       setColors([...colors, newColor]);
-      setNewColor('');
+      setNewColor("");
     }
   };
 
   const removeColor = (color: string) => {
-    setColors(colors.filter(c => c !== color));
+    setColors(colors.filter((c) => c !== color));
   };
 
   const addTag = () => {
     if (newTag && !tags.includes(newTag)) {
       setTags([...tags, newTag]);
-      setNewTag('');
+      setNewTag("");
     }
   };
 
   const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
-  };
-
-  const addImage = () => {
-    if (newImage && !images.includes(newImage)) {
-      setImages([...images, newImage]);
-      setNewImage('');
-    }
-  };
-
-  const removeImage = (image: string) => {
-    setImages(images.filter(i => i !== image));
+    setTags(tags.filter((t) => t !== tag));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.description || !formData.price || !formData.category || images.length === 0) {
-      toast.error('Mohon lengkapi semua field yang wajib diisi');
+
+    if (
+      !formData.name ||
+      !formData.description ||
+      !formData.price ||
+      !formData.category ||
+      images.length === 0
+    ) {
+      toast.error(
+        "Mohon lengkapi semua field yang wajib diisi dan upload minimal 1 gambar"
+      );
       return;
     }
 
@@ -129,7 +134,9 @@ export default function NewProductPage() {
         name: formData.name,
         description: formData.description,
         price: parseInt(formData.price),
-        originalPrice: formData.originalPrice ? parseInt(formData.originalPrice) : undefined,
+        originalPrice: formData.originalPrice
+          ? parseInt(formData.originalPrice)
+          : undefined,
         category: formData.category,
         subcategory: formData.subcategory || undefined,
         sizes,
@@ -137,32 +144,34 @@ export default function NewProductPage() {
         images,
         stock: parseInt(formData.stock) || 0,
         featured: formData.featured,
-        tags
+        tags,
       };
 
-      const response = await fetch('/api/products', {
-        method: 'POST',
+      const response = await fetch("/api/products", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(productData),
       });
 
       if (response.ok) {
-        toast.success('Produk berhasil ditambahkan');
-        router.push('/admin/products');
+        toast.success("Produk berhasil ditambahkan");
+        router.push("/admin/products");
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Gagal menambahkan produk');
+        toast.error(error.error || "Gagal menambahkan produk");
       }
     } catch (error) {
-      toast.error('Terjadi kesalahan saat menambahkan produk');
+      toast.error("Terjadi kesalahan saat menambahkan produk");
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedCategory = categories.find(cat => cat.value === formData.category);
+  const selectedCategory = categories.find(
+    (cat) => cat.value === formData.category
+  );
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -242,9 +251,7 @@ export default function NewProductPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Harga</CardTitle>
-                    <CardDescription>
-                      Atur harga produk
-                    </CardDescription>
+                    <CardDescription>Atur harga produk</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -261,7 +268,9 @@ export default function NewProductPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="originalPrice">Harga Asli (Opsional)</Label>
+                        <Label htmlFor="originalPrice">
+                          Harga Asli (Opsional)
+                        </Label>
                         <Input
                           id="originalPrice"
                           name="originalPrice"
@@ -298,7 +307,9 @@ export default function NewProductPage() {
                           value={newSize}
                           onChange={(e) => setNewSize(e.target.value)}
                           placeholder="Tambah ukuran"
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSize())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && (e.preventDefault(), addSize())
+                          }
                         />
                         <Button type="button" onClick={addSize}>
                           <Plus className="h-4 w-4" />
@@ -306,7 +317,11 @@ export default function NewProductPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {sizes.map((size) => (
-                          <Badge key={size} variant="secondary" className="cursor-pointer">
+                          <Badge
+                            key={size}
+                            variant="secondary"
+                            className="cursor-pointer"
+                          >
                             {size}
                             <X
                               className="h-3 w-3 ml-1"
@@ -327,7 +342,10 @@ export default function NewProductPage() {
                           value={newColor}
                           onChange={(e) => setNewColor(e.target.value)}
                           placeholder="Tambah warna"
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            (e.preventDefault(), addColor())
+                          }
                         />
                         <Button type="button" onClick={addColor}>
                           <Plus className="h-4 w-4" />
@@ -335,7 +353,11 @@ export default function NewProductPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {colors.map((color) => (
-                          <Badge key={color} variant="secondary" className="cursor-pointer">
+                          <Badge
+                            key={color}
+                            variant="secondary"
+                            className="cursor-pointer"
+                          >
                             {color}
                             <X
                               className="h-3 w-3 ml-1"
@@ -356,7 +378,9 @@ export default function NewProductPage() {
                           value={newTag}
                           onChange={(e) => setNewTag(e.target.value)}
                           placeholder="Tambah tag"
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && (e.preventDefault(), addTag())
+                          }
                         />
                         <Button type="button" onClick={addTag}>
                           <Plus className="h-4 w-4" />
@@ -364,7 +388,11 @@ export default function NewProductPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {tags.map((tag) => (
-                          <Badge key={tag} variant="outline" className="cursor-pointer">
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="cursor-pointer"
+                          >
                             {tag}
                             <X
                               className="h-3 w-3 ml-1"
@@ -388,41 +416,17 @@ export default function NewProductPage() {
                   <CardHeader>
                     <CardTitle>Gambar Produk *</CardTitle>
                     <CardDescription>
-                      Tambahkan URL gambar produk (minimal 1 gambar)
+                      Upload gambar produk (minimal 1 gambar, maksimal 5 gambar)
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex space-x-2">
-                      <Input
-                        value={newImage}
-                        onChange={(e) => setNewImage(e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
-                      />
-                      <Button type="button" onClick={addImage}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {images.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image}
-                            alt={`Product ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="destructive"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeImage(image)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
+                  <CardContent>
+                    <ImageUpload
+                      value={images}
+                      onChange={setImages}
+                      maxFiles={5}
+                      folder="products"
+                      disabled={loading}
+                    />
                   </CardContent>
                 </Card>
               </motion.div>
@@ -443,13 +447,21 @@ export default function NewProductPage() {
                   <CardContent className="space-y-4">
                     <div>
                       <Label>Kategori *</Label>
-                      <Select value={formData.category} onValueChange={(value) => handleSelectChange('category', value)}>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) =>
+                          handleSelectChange("category", value)
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih kategori" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
+                            <SelectItem
+                              key={category.value}
+                              value={category.value}
+                            >
                               {category.value}
                             </SelectItem>
                           ))}
@@ -460,7 +472,12 @@ export default function NewProductPage() {
                     {selectedCategory && (
                       <div>
                         <Label>Sub Kategori</Label>
-                        <Select value={formData.subcategory} onValueChange={(value) => handleSelectChange('subcategory', value)}>
+                        <Select
+                          value={formData.subcategory}
+                          onValueChange={(value) =>
+                            handleSelectChange("subcategory", value)
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih sub kategori" />
                           </SelectTrigger>
@@ -510,7 +527,12 @@ export default function NewProductPage() {
                       </div>
                       <Switch
                         checked={formData.featured}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
+                        onCheckedChange={(checked) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            featured: checked,
+                          }))
+                        }
                       />
                     </div>
                   </CardContent>
@@ -526,14 +548,21 @@ export default function NewProductPage() {
                 <Card>
                   <CardContent className="p-6">
                     <div className="space-y-3">
-                      <Button type="submit" className="w-full" disabled={loading}>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={loading}
+                      >
                         <Save className="w-4 h-4 mr-2" />
-                        {loading ? 'Menyimpan...' : 'Simpan Produk'}
+                        {loading ? "Menyimpan..." : "Simpan Produk"}
                       </Button>
-                      <Button type="button" variant="outline" className="w-full" asChild>
-                        <Link href="/admin/products">
-                          Batal
-                        </Link>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        asChild
+                      >
+                        <Link href="/admin/products">Batal</Link>
                       </Button>
                     </div>
                   </CardContent>
