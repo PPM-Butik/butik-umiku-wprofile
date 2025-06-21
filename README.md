@@ -56,10 +56,15 @@ Sebuah website profile modern untuk Butik Umiku yang dibangun menggunakan Next.j
     NEXTAUTH_URL=
     NEXTAUTH_SECRET=
 
-    # Database 
+    # Database
     MONGODB_URI=
 
-    # Social Media Links 
+    # Cloudinary Configuration
+    CLOUDINARY_CLOUD_NAME=
+    CLOUDINARY_API_KEY=
+    CLOUDINARY_API_SECRET=
+
+    # Social Media Links
     NEXT_PUBLIC_WHATSAPP_URL=
     NEXT_PUBLIC_INSTAGRAM_URL=
     NEXT_PUBLIC_FACEBOOK_URL=
@@ -88,7 +93,7 @@ butik-umiku-wprofile/
 ├── components/             # Reusable components
 │   ├── ui/                # UI components (Radix + Tailwind)
 │   └── ...
-├── hooks/  
+├── hooks/
 ├── lib/                   # Utility functions
 ├── public/                # Static assets
 ├── styles/                # Global styles
