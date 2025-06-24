@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -67,11 +65,7 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
-  // Handle potential undefined useSession during prerendering
-  const sessionResult = useSession();
-  const session = sessionResult?.data;
-  const status = sessionResult?.status || "loading";
-
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -80,9 +74,22 @@ export default function AdminCategoriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
-  const [initialized, setInitialized] = useState(false);
 
-  // Session check - only redirect, don't fetch data here
+  // Fetch categories immediately - no need to wait for session since API is public
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Search effect - debounced
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchCategories();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Session check for UI access - but don't block data fetching
   useEffect(() => {
     if (status === "loading") return;
 
@@ -95,28 +102,7 @@ export default function AdminCategoriesPage() {
       router.push("/");
       return;
     }
-
-    // Mark as initialized only after session check passes
-    setInitialized(true);
   }, [session, status, router]);
-
-  // Fetch categories - separate from session check
-  useEffect(() => {
-    if (!initialized) return;
-
-    fetchCategories();
-  }, [initialized]);
-
-  // Search effect - debounced
-  useEffect(() => {
-    if (!initialized) return;
-
-    const timeoutId = setTimeout(() => {
-      fetchCategories();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, initialized]);
 
   const fetchCategories = async () => {
     try {
@@ -128,8 +114,6 @@ export default function AdminCategoriesPage() {
       params.append("page", "1");
       params.append("limit", "50");
 
-      console.log("Fetching categories...");
-
       const response = await fetch(`/api/categories?${params}`, {
         method: "GET",
         headers: {
@@ -137,14 +121,11 @@ export default function AdminCategoriesPage() {
         },
       });
 
-      console.log("Response status:", response.status);
-
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Categories data received:", data);
 
       // Handle both old and new response formats
       const categoriesData = data.categories || data || [];
@@ -184,42 +165,142 @@ export default function AdminCategoriesPage() {
     setDeleteCategoryId(null);
   };
 
-  // Show loading while checking session or if sessionResult is undefined
-  if (status === "loading" || !sessionResult || !initialized) {
+  // Show loading only while checking session, but still show data
+  if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-rose-600 mb-4"></div>
-          <p className="text-muted-foreground">Memuat...</p>
+      <div className="min-h-screen bg-muted/30">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">Kelola Kategori</h1>
+            <p className="text-muted-foreground">
+              Kelola semua kategori produk di toko Anda
+            </p>
+          </div>
+
+          {/* Show categories data even while session is loading */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Daftar Kategori</CardTitle>
+              <CardDescription>
+                {loading ? "Memuat..." : `Total ${categories.length} kategori`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mb-2"></div>
+                  <p className="text-sm text-muted-foreground">
+                    Memuat kategori...
+                  </p>
+                </div>
+              ) : categories.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nama Kategori</TableHead>
+                        <TableHead>Deskripsi</TableHead>
+                        <TableHead>Sub Kategori</TableHead>
+                        <TableHead>Jumlah Produk</TableHead>
+                        <TableHead>Dibuat</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categories.map((category) => (
+                        <TableRow key={category._id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <div className="p-2 bg-rose-100 dark:bg-rose-900/30 rounded-lg">
+                                <Tag className="w-4 h-4 text-rose-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{category.name}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm text-muted-foreground line-clamp-2 max-w-xs">
+                              {category.description}
+                            </p>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {category.subcategories
+                                ?.slice(0, 3)
+                                .map((sub) => (
+                                  <Badge
+                                    key={sub}
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    {sub}
+                                  </Badge>
+                                ))}
+                              {(category.subcategories?.length || 0) > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{(category.subcategories?.length || 0) - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {category.productCount || 0} produk
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm text-muted-foreground">
+                              {category.createdAt
+                                ? new Date(
+                                    category.createdAt
+                                  ).toLocaleDateString("id-ID")
+                                : "-"}
+                            </p>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Tag className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">
+                    Tidak ada kategori
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Belum ada kategori yang dibuat
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
-  // Not authenticated
+  // Not authenticated - redirect handled by useEffect
   if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Sesi tidak ditemukan</h2>
-          <p className="text-muted-foreground mb-4">
-            Silakan login terlebih dahulu.
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-rose-600 mb-4"></div>
+          <p className="text-muted-foreground">
+            Mengalihkan ke halaman login...
           </p>
-          <Button onClick={() => router.push("/auth/signin")}>Login</Button>
         </div>
       </div>
     );
   }
 
-  // Not admin
+  // Not admin - redirect handled by useEffect
   if (session.user?.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Akses Ditolak</h2>
-          <p className="text-muted-foreground">
-            Anda tidak memiliki akses ke halaman ini.
-          </p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-rose-600 mb-4"></div>
+          <p className="text-muted-foreground">Mengalihkan...</p>
         </div>
       </div>
     );
@@ -257,7 +338,7 @@ export default function AdminCategoriesPage() {
               </p>
             </div>
             <div className="flex space-x-2">
-              <Button
+              {/* <Button
                 onClick={fetchCategories}
                 variant="outline"
                 size="sm"
@@ -267,7 +348,7 @@ export default function AdminCategoriesPage() {
                   className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
                 />
                 Refresh
-              </Button>
+              </Button> */}
               <Button asChild>
                 <Link href="/admin/categories/new">
                   <Plus className="w-4 h-4 mr-2" />
