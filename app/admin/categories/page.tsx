@@ -67,7 +67,11 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
-  const { data: session, status } = useSession();
+  // Handle potential undefined useSession during prerendering
+  const sessionResult = useSession();
+  const session = sessionResult?.data;
+  const status = sessionResult?.status || "loading";
+
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -180,8 +184,8 @@ export default function AdminCategoriesPage() {
     setDeleteCategoryId(null);
   };
 
-  // Show loading while checking session
-  if (status === "loading" || !initialized) {
+  // Show loading while checking session or if sessionResult is undefined
+  if (status === "loading" || !sessionResult || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
