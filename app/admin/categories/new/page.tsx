@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 export default function NewCategoryPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,6 +32,20 @@ export default function NewCategoryPage() {
   });
   const [subcategories, setSubcategories] = useState<string[]>([]);
   const [newSubcategory, setNewSubcategory] = useState("");
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    if (session.user.role !== "admin") {
+      router.push("/");
+      return;
+    }
+  }, [session, status, router]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -92,6 +106,18 @@ export default function NewCategoryPage() {
       setLoading(false);
     }
   };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-rose-600"></div>
+      </div>
+    );
+  }
+
+  if (!session || session.user.role !== "admin") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
