@@ -5,16 +5,16 @@ import { connectDB } from "@/lib/mongodb";
 import Category from "@/lib/models/Category";
 
 interface CategoryDocument {
-  _id: string;
+  _id: any;
   name: string;
   description: string;
   subcategories: string[];
-  slug: string;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: any;
+  updatedAt: any;
 }
 
+// GET - Fetch single category
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -38,7 +38,9 @@ export async function GET(
       return NextResponse.json(demoCategory);
     }
 
-    const category = (await Category.findById(params.id).lean()) as any;
+    const category = (await Category.findById(
+      params.id
+    ).lean()) as CategoryDocument | null;
 
     if (!category) {
       return NextResponse.json(
@@ -62,8 +64,8 @@ export async function GET(
 
     const categoryWithCount = {
       _id: category._id.toString(),
-      name: category.name,
-      description: category.description,
+      name: category.name || "",
+      description: category.description || "",
       subcategories: category.subcategories || [],
       productCount,
       isActive: category.isActive !== false,
@@ -85,13 +87,12 @@ export async function GET(
   }
 }
 
+// PUT - Update category (Admin only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("Update category API called for ID:", params.id);
-
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "admin") {
@@ -122,7 +123,7 @@ export async function PUT(
       name: { $regex: new RegExp(`^${name}$`, "i") },
       _id: { $ne: params.id },
       isActive: true,
-    }).lean()) as any;
+    }).lean()) as CategoryDocument | null;
 
     if (duplicateCategory) {
       return NextResponse.json(
@@ -140,7 +141,7 @@ export async function PUT(
         updatedAt: new Date(),
       },
       { new: true, runValidators: true }
-    ).lean()) as any;
+    )) as CategoryDocument | null;
 
     if (!category) {
       return NextResponse.json(
@@ -164,8 +165,8 @@ export async function PUT(
 
     const categoryWithCount = {
       _id: category._id.toString(),
-      name: category.name,
-      description: category.description,
+      name: category.name || "",
+      description: category.description || "",
       subcategories: category.subcategories || [],
       productCount,
       isActive: category.isActive !== false,
@@ -187,13 +188,12 @@ export async function PUT(
   }
 }
 
+// DELETE - Delete category (Admin only)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("Delete category API called for ID:", params.id);
-
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "admin") {
@@ -208,7 +208,9 @@ export async function DELETE(
       );
     }
 
-    const category = (await Category.findById(params.id).lean()) as any;
+    const category = (await Category.findById(
+      params.id
+    )) as CategoryDocument | null;
 
     if (!category) {
       return NextResponse.json(

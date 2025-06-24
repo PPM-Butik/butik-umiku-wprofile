@@ -17,45 +17,6 @@ interface CategoryType {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("=== Categories API Called ===");
-    console.log(
-      "Request headers:",
-      Object.fromEntries(request.headers.entries())
-    );
-
-    const session = await getServerSession(authOptions);
-    console.log("Session result:", {
-      exists: !!session,
-      user: session?.user,
-      role: session?.user?.role,
-    });
-
-    const isDebugMode = process.env.NODE_ENV === "development";
-
-    if (!session) {
-      if (isDebugMode) {
-        console.log("⚠️ DEBUG MODE: Allowing access without session");
-      } else {
-        console.log("❌ No session found");
-        return NextResponse.json(
-          { error: "No session found" },
-          { status: 401 }
-        );
-      }
-    } else if (session.user?.role !== "admin") {
-      if (isDebugMode) {
-        console.log("⚠️ DEBUG MODE: Allowing non-admin access");
-      } else {
-        console.log("❌ User is not admin:", session.user?.role);
-        return NextResponse.json(
-          { error: "User is not admin" },
-          { status: 403 }
-        );
-      }
-    }
-
-    console.log("✅ Authentication passed");
-
     const { searchParams } = new URL(request.url);
     const page = Number.parseInt(searchParams.get("page") || "1");
     const limit = Number.parseInt(searchParams.get("limit") || "12");
@@ -125,7 +86,6 @@ export async function GET(request: NextRequest) {
           totalPages: Math.ceil(filteredDemo.length / limit),
           totalCategories: filteredDemo.length,
           isDemo: true,
-          message: "Database not connected - showing demo data",
         });
       }
 
@@ -156,42 +116,44 @@ export async function GET(request: NextRequest) {
         `Database query returned ${dbCategories.length} categories out of ${dbTotalCategories} total`
       );
 
+      // Transform MongoDB documents to CategoryType format
+      categories = dbCategories.map((category: any) => ({
+        _id: category._id.toString(),
+        name: category.name || "",
+        description: category.description || "",
+        subcategories: category.subcategories || [],
+        productCount: 0, // Will be calculated below
+        isActive: category.isActive !== false,
+        createdAt: category.createdAt
+          ? new Date(category.createdAt).toISOString()
+          : new Date().toISOString(),
+        updatedAt: category.updatedAt
+          ? new Date(category.updatedAt).toISOString()
+          : new Date().toISOString(),
+      }));
+
       // Get product counts for each category
-      const categoriesWithCount = await Promise.all(
-        dbCategories.map(async (category: any) => {
-          let productCount = 0;
-          try {
-            // Try to get product count if Product model exists
-            const Product = require("@/lib/models/Product").default;
-            if (Product) {
-              productCount = await Product.countDocuments({
-                category: category.name,
-                // Add any other conditions for active products
+      try {
+        const Product = require("@/lib/models/Product").default;
+        if (Product) {
+          for (let i = 0; i < categories.length; i++) {
+            try {
+              const productCount = await Product.countDocuments({
+                category: categories[i].name,
               });
+              categories[i].productCount = productCount;
+            } catch (error) {
+              categories[i].productCount = 0;
             }
-          } catch (error) {
-            // If Product model doesn't exist or error occurs, set count to 0
-            productCount = 0;
           }
+        }
+      } catch (error) {
+        console.log(
+          "Product model not found or error calculating counts:",
+          error
+        );
+      }
 
-          return {
-            _id: category._id.toString(),
-            name: category.name || "",
-            description: category.description || "",
-            subcategories: category.subcategories || [],
-            productCount,
-            isActive: category.isActive !== false,
-            createdAt: category.createdAt
-              ? new Date(category.createdAt).toISOString()
-              : new Date().toISOString(),
-            updatedAt: category.updatedAt
-              ? new Date(category.updatedAt).toISOString()
-              : new Date().toISOString(),
-          };
-        })
-      );
-
-      categories = categoriesWithCount;
       totalCategories = dbTotalCategories;
 
       console.log(
@@ -233,10 +195,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("=== Categories POST API Called ===");
-
     const session = await getServerSession(authOptions);
-    console.log("Session for POST:", !!session, session?.user?.role);
 
     if (!session || session.user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -245,12 +204,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, description, subcategories } = body;
 
-    console.log("Creating category:", { name, description, subcategories });
-
     // Validation
     if (!name || !description) {
       return NextResponse.json(
-        { error: "Name and description are required" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
