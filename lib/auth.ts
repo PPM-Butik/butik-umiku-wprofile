@@ -27,14 +27,14 @@ export const authOptions: NextAuthOptions = {
               role: "admin",
               avatar: "",
             },
-            {
-              id: "demo_user_2",
-              email: "user@ethicastore.com",
-              password: "user123",
-              name: "User Demo",
-              role: "user",
-              avatar: "",
-            },
+            // {
+            //   id: "demo_user_2",
+            //   email: "user@ethicastore.com",
+            //   password: "user123",
+            //   name: "User Demo",
+            //   role: "user",
+            //   avatar: "",
+            // },
           ];
 
           const demoUser = demoUsers.find(
