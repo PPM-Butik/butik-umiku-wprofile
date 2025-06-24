@@ -21,6 +21,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("Single category API called for ID:", params.id);
+
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "admin") {
@@ -36,9 +38,15 @@ export async function GET(
 
     await connectDB();
 
-    const category = (await Category.findById(
-      params.id
-    ).lean()) as CategoryDocument | null;
+    // Add timeout for database operation
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Database timeout")), 5000);
+    });
+
+    const category = (await Promise.race([
+      Category.findById(params.id).lean(),
+      timeoutPromise,
+    ])) as CategoryDocument | null;
 
     if (!category) {
       return NextResponse.json(
@@ -47,17 +55,23 @@ export async function GET(
       );
     }
 
-    // Get product count for this category
+    // Get product count with timeout
     let productCount = 0;
     try {
       const Product = mongoose.models.Product;
       if (Product) {
-        productCount = await Product.countDocuments({
-          category: category.name,
-          isActive: true,
-        });
+        productCount = (await Promise.race([
+          Product.countDocuments({
+            category: category.name,
+            isActive: true,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Product count timeout")), 3000)
+          ),
+        ])) as number;
       }
     } catch (error) {
+      console.log("Product count error (using 0):", error);
       productCount = 0;
     }
 
@@ -69,7 +83,10 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching category:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
@@ -80,6 +97,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("Update category API called for ID:", params.id);
+
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "admin") {
@@ -105,8 +124,16 @@ export async function PUT(
 
     await connectDB();
 
+    // Add timeout for database operations
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Database timeout")), 8000);
+    });
+
     // Check if category exists
-    const existingCategory = await Category.findById(params.id);
+    const existingCategory = await Promise.race([
+      Category.findById(params.id),
+      timeoutPromise,
+    ]);
 
     if (!existingCategory) {
       return NextResponse.json(
@@ -142,27 +169,41 @@ export async function PUT(
       try {
         const Product = mongoose.models.Product;
         if (Product) {
-          await Product.updateMany(
-            { category: oldName },
-            { $set: { category: name } }
-          );
+          await Promise.race([
+            Product.updateMany(
+              { category: oldName },
+              { $set: { category: name } }
+            ),
+            new Promise((_, reject) =>
+              setTimeout(
+                () => reject(new Error("Product update timeout")),
+                5000
+              )
+            ),
+          ]);
         }
       } catch (error) {
-        console.log("Product model not found, skipping product update");
+        console.log("Product update error (continuing anyway):", error);
       }
     }
 
-    // Get product count
+    // Get product count with timeout
     let productCount = 0;
     try {
       const Product = mongoose.models.Product;
       if (Product) {
-        productCount = await Product.countDocuments({
-          category: name,
-          isActive: true,
-        });
+        productCount = (await Promise.race([
+          Product.countDocuments({
+            category: name,
+            isActive: true,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Product count timeout")), 3000)
+          ),
+        ])) as number;
       }
     } catch (error) {
+      console.log("Product count error (using 0):", error);
       productCount = 0;
     }
 
@@ -174,7 +215,10 @@ export async function PUT(
   } catch (error) {
     console.error("Error updating category:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
@@ -185,6 +229,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("Delete category API called for ID:", params.id);
+
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "admin") {
@@ -209,17 +255,23 @@ export async function DELETE(
       );
     }
 
-    // Check if category has products
+    // Check if category has products with timeout
     let productCount = 0;
     try {
       const Product = mongoose.models.Product;
       if (Product) {
-        productCount = await Product.countDocuments({
-          category: category.name,
-          isActive: true,
-        });
+        productCount = (await Promise.race([
+          Product.countDocuments({
+            category: category.name,
+            isActive: true,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Product count timeout")), 3000)
+          ),
+        ])) as number;
       }
     } catch (error) {
+      console.log("Product count error (assuming 0):", error);
       productCount = 0;
     }
 
@@ -240,7 +292,10 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting category:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
