@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import Category from "@/lib/models/Category";
-import mongoose from "mongoose";
 
 interface CategoryDocument {
   _id: string;
@@ -21,32 +20,25 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log("Single category API called for ID:", params.id);
+    const connection = await connectDB();
+    if (!connection) {
+      // Return demo category when database is not connected
+      const demoCategory = {
+        _id: params.id,
+        name: "Elektronik",
+        description:
+          "Perangkat elektronik dan gadget terbaru dengan kualitas terbaik",
+        subcategories: ["Smartphone", "Laptop", "Tablet", "Smartwatch"],
+        productCount: 25,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    const session = await getServerSession(authOptions);
-
-    if (!session || session.user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(demoCategory);
     }
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
-      return NextResponse.json(
-        { error: "Invalid category ID" },
-        { status: 400 }
-      );
-    }
-
-    await connectDB();
-
-    // Add timeout for database operation
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Database timeout")), 5000);
-    });
-
-    const category = (await Promise.race([
-      Category.findById(params.id).lean(),
-      timeoutPromise,
-    ])) as CategoryDocument | null;
+    const category = (await Category.findById(params.id).lean()) as any;
 
     if (!category) {
       return NextResponse.json(
@@ -55,38 +47,39 @@ export async function GET(
       );
     }
 
-    // Get product count with timeout
+    // Get product count for this category
     let productCount = 0;
     try {
-      const Product = mongoose.models.Product;
+      const Product = require("@/lib/models/Product").default;
       if (Product) {
-        productCount = (await Promise.race([
-          Product.countDocuments({
-            category: category.name,
-            isActive: true,
-          }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Product count timeout")), 3000)
-          ),
-        ])) as number;
+        productCount = await Product.countDocuments({
+          category: category.name,
+        });
       }
     } catch (error) {
-      console.log("Product count error (using 0):", error);
       productCount = 0;
     }
 
-    return NextResponse.json({
-      ...category,
+    const categoryWithCount = {
       _id: category._id.toString(),
+      name: category.name,
+      description: category.description,
+      subcategories: category.subcategories || [],
       productCount,
-    });
+      isActive: category.isActive !== false,
+      createdAt: category.createdAt
+        ? new Date(category.createdAt).toISOString()
+        : new Date().toISOString(),
+      updatedAt: category.updatedAt
+        ? new Date(category.updatedAt).toISOString()
+        : new Date().toISOString(),
+    };
+
+    return NextResponse.json(categoryWithCount);
   } catch (error) {
     console.error("Error fetching category:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to fetch category" },
       { status: 500 }
     );
   }
@@ -105,16 +98,18 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    const connection = await connectDB();
+    if (!connection) {
       return NextResponse.json(
-        { error: "Invalid category ID" },
-        { status: 400 }
+        { error: "Database not connected" },
+        { status: 503 }
       );
     }
 
     const body = await request.json();
     const { name, description, subcategories } = body;
 
+    // Validation
     if (!name || !description) {
       return NextResponse.json(
         { error: "Name and description are required" },
@@ -122,31 +117,12 @@ export async function PUT(
       );
     }
 
-    await connectDB();
-
-    // Add timeout for database operations
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Database timeout")), 8000);
-    });
-
-    // Check if category exists
-    const existingCategory = await Promise.race([
-      Category.findById(params.id),
-      timeoutPromise,
-    ]);
-
-    if (!existingCategory) {
-      return NextResponse.json(
-        { error: "Category not found" },
-        { status: 404 }
-      );
-    }
-
     // Check if another category with the same name exists
-    const duplicateCategory = await Category.findOne({
+    const duplicateCategory = (await Category.findOne({
       name: { $regex: new RegExp(`^${name}$`, "i") },
       _id: { $ne: params.id },
-    });
+      isActive: true,
+    }).lean()) as any;
 
     if (duplicateCategory) {
       return NextResponse.json(
@@ -155,70 +131,57 @@ export async function PUT(
       );
     }
 
-    const oldName = existingCategory.name;
+    const category = (await Category.findByIdAndUpdate(
+      params.id,
+      {
+        name: name.trim(),
+        description: description.trim(),
+        subcategories: Array.isArray(subcategories) ? subcategories : [],
+        updatedAt: new Date(),
+      },
+      { new: true, runValidators: true }
+    ).lean()) as any;
 
-    // Update category
-    existingCategory.name = name.trim();
-    existingCategory.description = description.trim();
-    existingCategory.subcategories = subcategories || [];
-
-    await existingCategory.save();
-
-    // If category name changed, update all products using this category
-    if (oldName !== name) {
-      try {
-        const Product = mongoose.models.Product;
-        if (Product) {
-          await Promise.race([
-            Product.updateMany(
-              { category: oldName },
-              { $set: { category: name } }
-            ),
-            new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Product update timeout")),
-                5000
-              )
-            ),
-          ]);
-        }
-      } catch (error) {
-        console.log("Product update error (continuing anyway):", error);
-      }
+    if (!category) {
+      return NextResponse.json(
+        { error: "Category not found" },
+        { status: 404 }
+      );
     }
 
-    // Get product count with timeout
+    // Get product count for updated category
     let productCount = 0;
     try {
-      const Product = mongoose.models.Product;
+      const Product = require("@/lib/models/Product").default;
       if (Product) {
-        productCount = (await Promise.race([
-          Product.countDocuments({
-            category: name,
-            isActive: true,
-          }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Product count timeout")), 3000)
-          ),
-        ])) as number;
+        productCount = await Product.countDocuments({
+          category: category.name,
+        });
       }
     } catch (error) {
-      console.log("Product count error (using 0):", error);
       productCount = 0;
     }
 
-    return NextResponse.json({
-      ...existingCategory.toObject(),
-      _id: existingCategory._id.toString(),
+    const categoryWithCount = {
+      _id: category._id.toString(),
+      name: category.name,
+      description: category.description,
+      subcategories: category.subcategories || [],
       productCount,
-    });
+      isActive: category.isActive !== false,
+      createdAt: category.createdAt
+        ? new Date(category.createdAt).toISOString()
+        : new Date().toISOString(),
+      updatedAt: category.updatedAt
+        ? new Date(category.updatedAt).toISOString()
+        : new Date().toISOString(),
+    };
+
+    return NextResponse.json(categoryWithCount);
   } catch (error) {
     console.error("Error updating category:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to update category" },
       { status: 500 }
     );
   }
@@ -237,16 +200,15 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    const connection = await connectDB();
+    if (!connection) {
       return NextResponse.json(
-        { error: "Invalid category ID" },
-        { status: 400 }
+        { error: "Database not connected" },
+        { status: 503 }
       );
     }
 
-    await connectDB();
-
-    const category = await Category.findById(params.id);
+    const category = (await Category.findById(params.id).lean()) as any;
 
     if (!category) {
       return NextResponse.json(
@@ -255,23 +217,16 @@ export async function DELETE(
       );
     }
 
-    // Check if category has products with timeout
+    // Check if category has products
     let productCount = 0;
     try {
-      const Product = mongoose.models.Product;
+      const Product = require("@/lib/models/Product").default;
       if (Product) {
-        productCount = (await Promise.race([
-          Product.countDocuments({
-            category: category.name,
-            isActive: true,
-          }),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Product count timeout")), 3000)
-          ),
-        ])) as number;
+        productCount = await Product.countDocuments({
+          category: category.name,
+        });
       }
     } catch (error) {
-      console.log("Product count error (assuming 0):", error);
       productCount = 0;
     }
 
@@ -285,17 +240,13 @@ export async function DELETE(
     }
 
     // Soft delete by setting isActive to false
-    category.isActive = false;
-    await category.save();
+    await Category.findByIdAndUpdate(params.id, { isActive: false });
 
     return NextResponse.json({ message: "Category deleted successfully" });
   } catch (error) {
     console.error("Error deleting category:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to delete category" },
       { status: 500 }
     );
   }
