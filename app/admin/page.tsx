@@ -22,6 +22,7 @@ import {
   FileText,
   Settings,
   PenLine,
+  Tags,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -120,6 +121,20 @@ export default function AdminDashboard() {
       href: "/admin/blog",
       color: "bg-rose-600 hover:bg-rose-700",
     },
+    {
+      title: "Tambah Kategori",
+      description: "Tambahkan kategori produk",
+      icon: Tags,
+      href: "/admin/categories/new",
+      color: "bg-orange-600 hover:bg-orange-700",
+    },
+    {
+      title: "Kelola Kategori",
+      description: "Atur kategori produk",
+      icon: Tags,
+      href: "/admin/categories",
+      color: "bg-yellow-600 hover:bg-yellow-700",
+    },
   ];
 
   return (
@@ -189,7 +204,7 @@ export default function AdminDashboard() {
               <CardDescription>Akses fitur utama dengan cepat</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 {quickActions.map((action, index) => (
                   <motion.div
                     key={action.title}
@@ -227,7 +242,7 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Artikel Terbaru</CardTitle>
                 <CardDescription>5 artikel terakhir</CardDescription>
@@ -269,7 +284,7 @@ export default function AdminDashboard() {
                   </Link>
                 </Button>
               </CardContent>
-            </Card>
+            </Card> */}
           </motion.div>
 
           <motion.div
@@ -277,7 +292,7 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Produk Terpopuler</CardTitle>
                 <CardDescription>Berdasarkan jumlah dilihat</CardDescription>
@@ -314,7 +329,7 @@ export default function AdminDashboard() {
                   </Link>
                 </Button>
               </CardContent>
-            </Card>
+            </Card> */}
           </motion.div>
         </div>
       </div>

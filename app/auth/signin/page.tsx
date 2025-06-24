@@ -162,14 +162,14 @@ export default function SignInPage() {
                 >
                   <strong className="mr-2">Admin:</strong> admin@ethicastore.com / admin123
                 </Button>
-                <Button
+                {/* <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-xs"
                   onClick={() => handleDemoLogin("user@ethicastore.com", "user123")}
                 >
                   <strong className="mr-2">User:</strong> user@ethicastore.com / user123
-                </Button>
+                </Button> */}
               </div>
             </div>
 

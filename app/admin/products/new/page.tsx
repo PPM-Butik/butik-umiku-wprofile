@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import type React from "react";
+
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -30,10 +32,17 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/image-upload";
 
+interface Category {
+  _id: string;
+  name: string;
+  subcategories: string[];
+}
+
 export default function NewProductPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -52,14 +61,24 @@ export default function NewProductPage() {
   const [newColor, setNewColor] = useState("");
   const [newTag, setNewTag] = useState("");
 
-  const categories = [
-    { value: "Gamis", subcategories: ["Syari", "Casual", "Formal"] },
-    { value: "Hijab", subcategories: ["Voal", "Satin", "Chiffon", "Jersey"] },
-    { value: "Tunik", subcategories: ["Casual", "Formal", "Daily"] },
-    { value: "Mukena", subcategories: ["Premium", "Regular", "Travel"] },
-    { value: "Khimar", subcategories: ["Syari", "Casual", "Premium"] },
-    { value: "Abaya", subcategories: ["Casual", "Formal", "Premium"] },
-  ];
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("/api/categories?limit=50");
+      const data = await response.json();
+
+      if (response.ok) {
+        setCategories(data.categories);
+      } else {
+        toast.error("Gagal memuat kategori");
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat memuat kategori");
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -76,6 +95,14 @@ export default function NewProductPage() {
       ...prev,
       [name]: value,
     }));
+
+    // Reset subcategory when category changes
+    if (name === "category") {
+      setFormData((prev) => ({
+        ...prev,
+        subcategory: "",
+      }));
+    }
   };
 
   const addSize = () => {
@@ -133,16 +160,16 @@ export default function NewProductPage() {
       const productData = {
         name: formData.name,
         description: formData.description,
-        price: parseInt(formData.price),
+        price: Number.parseInt(formData.price),
         originalPrice: formData.originalPrice
-          ? parseInt(formData.originalPrice)
+          ? Number.parseInt(formData.originalPrice)
           : undefined,
         category: formData.category,
         subcategory: formData.subcategory || undefined,
         sizes,
         colors,
         images,
-        stock: parseInt(formData.stock) || 0,
+        stock: Number.parseInt(formData.stock) || 0,
         featured: formData.featured,
         tags,
       };
@@ -170,7 +197,7 @@ export default function NewProductPage() {
   };
 
   const selectedCategory = categories.find(
-    (cat) => cat.value === formData.category
+    (cat) => cat.name === formData.category
   );
 
   return (
@@ -459,38 +486,50 @@ export default function NewProductPage() {
                         <SelectContent>
                           {categories.map((category) => (
                             <SelectItem
-                              key={category.value}
-                              value={category.value}
+                              key={category._id}
+                              value={category.name}
                             >
-                              {category.value}
+                              {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {categories.length === 0 && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Belum ada kategori.{" "}
+                          <Link
+                            href="/admin/categories/new"
+                            className="text-rose-600 hover:underline"
+                          >
+                            Buat kategori baru
+                          </Link>
+                        </p>
+                      )}
                     </div>
 
-                    {selectedCategory && (
-                      <div>
-                        <Label>Sub Kategori</Label>
-                        <Select
-                          value={formData.subcategory}
-                          onValueChange={(value) =>
-                            handleSelectChange("subcategory", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih sub kategori" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory.subcategories.map((sub) => (
-                              <SelectItem key={sub} value={sub}>
-                                {sub}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    {selectedCategory &&
+                      selectedCategory.subcategories.length > 0 && (
+                        <div>
+                          <Label>Sub Kategori</Label>
+                          <Select
+                            value={formData.subcategory}
+                            onValueChange={(value) =>
+                              handleSelectChange("subcategory", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih sub kategori" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory.subcategories.map((sub) => (
+                                <SelectItem key={sub} value={sub}>
+                                  {sub}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
 
                     <div>
                       <Label htmlFor="stock">Stok</Label>
