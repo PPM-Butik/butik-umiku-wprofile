@@ -1,7 +1,8 @@
 "use client";
 
-import type React from "react";
+export const dynamic = "force-dynamic";
 
+import type React from "react";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -25,6 +26,13 @@ import { toast } from "sonner";
 export default function NewCategoryPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login"); // Redirect jika tidak login
+    }
+  }, [status, router]);
+
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -32,20 +40,6 @@ export default function NewCategoryPage() {
   });
   const [subcategories, setSubcategories] = useState<string[]>([]);
   const [newSubcategory, setNewSubcategory] = useState("");
-
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      router.push("/auth/signin");
-      return;
-    }
-
-    if (session.user.role !== "admin") {
-      router.push("/");
-      return;
-    }
-  }, [session, status, router]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -108,21 +102,16 @@ export default function NewCategoryPage() {
   };
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-rose-600"></div>
-      </div>
-    );
+    return <div className="p-4 text-center">Memuat sesi...</div>;
   }
 
-  if (!session || session.user.role !== "admin") {
-    return null;
+  if (status === "unauthenticated") {
+    return null; // sementara kosong karena diarahkan lewat useEffect
   }
 
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -144,7 +133,7 @@ export default function NewCategoryPage() {
         </motion.div>
 
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-8">
-          {/* Basic Information */}
+          {/* Informasi Kategori */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -185,7 +174,7 @@ export default function NewCategoryPage() {
             </Card>
           </motion.div>
 
-          {/* Subcategories */}
+          {/* Subkategori */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -206,7 +195,7 @@ export default function NewCategoryPage() {
                       value={newSubcategory}
                       onChange={(e) => setNewSubcategory(e.target.value)}
                       placeholder="Nama sub kategori"
-                      onKeyPress={(e) =>
+                      onKeyDown={(e) =>
                         e.key === "Enter" &&
                         (e.preventDefault(), addSubcategory())
                       }
@@ -241,7 +230,7 @@ export default function NewCategoryPage() {
             </Card>
           </motion.div>
 
-          {/* Actions */}
+          {/* Tombol Aksi */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
