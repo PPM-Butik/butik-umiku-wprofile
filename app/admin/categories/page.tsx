@@ -67,19 +67,18 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
-  const sessionResult = useSession();
-  const session = sessionResult?.data;
-  const status = sessionResult?.status || "loading";
-
+  const { data: session, status } = useSession();
   const router = useRouter();
+
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  // Session check and initial fetch
+  // Session check - only redirect, don't fetch data here
   useEffect(() => {
     if (status === "loading") return;
 
@@ -93,16 +92,27 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    fetchCategories();
+    // Mark as initialized only after session check passes
+    setInitialized(true);
   }, [session, status, router]);
 
-  // Search effect
+  // Fetch categories - separate from session check
   useEffect(() => {
+    if (!initialized) return;
+
+    fetchCategories();
+  }, [initialized]);
+
+  // Search effect - debounced
+  useEffect(() => {
+    if (!initialized) return;
+
     const timeoutId = setTimeout(() => {
       fetchCategories();
     }, 300);
+
     return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, [searchTerm, initialized]);
 
   const fetchCategories = async () => {
     try {
@@ -114,6 +124,8 @@ export default function AdminCategoriesPage() {
       params.append("page", "1");
       params.append("limit", "50");
 
+      console.log("Fetching categories...");
+
       const response = await fetch(`/api/categories?${params}`, {
         method: "GET",
         headers: {
@@ -121,14 +133,19 @@ export default function AdminCategoriesPage() {
         },
       });
 
+      console.log("Response status:", response.status);
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Categories API response:", data);
+      console.log("Categories data received:", data);
 
-      setCategories(data.categories || []);
+      // Handle both old and new response formats
+      const categoriesData = data.categories || data || [];
+
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       setIsDemo(data.isDemo || false);
 
       if (data.isDemo) {
@@ -163,13 +180,13 @@ export default function AdminCategoriesPage() {
     setDeleteCategoryId(null);
   };
 
-  // Loading state
-  if (status === "loading") {
+  // Show loading while checking session
+  if (status === "loading" || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-rose-600 mb-4"></div>
-          <p className="text-muted-foreground">Memuat sesi...</p>
+          <p className="text-muted-foreground">Memuat...</p>
         </div>
       </div>
     );
@@ -203,12 +220,6 @@ export default function AdminCategoriesPage() {
       </div>
     );
   }
-
-  const filteredCategories = categories.filter(
-    (category) =>
-      category.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -326,9 +337,7 @@ export default function AdminCategoriesPage() {
             <CardHeader>
               <CardTitle>Daftar Kategori</CardTitle>
               <CardDescription>
-                {loading
-                  ? "Memuat..."
-                  : `Total ${filteredCategories.length} kategori`}
+                {loading ? "Memuat..." : `Total ${categories.length} kategori`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -339,7 +348,7 @@ export default function AdminCategoriesPage() {
                     Memuat kategori...
                   </p>
                 </div>
-              ) : filteredCategories.length > 0 ? (
+              ) : categories.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -353,7 +362,7 @@ export default function AdminCategoriesPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredCategories.map((category) => (
+                      {categories.map((category) => (
                         <TableRow key={category._id}>
                           <TableCell>
                             <div className="flex items-center space-x-3">
