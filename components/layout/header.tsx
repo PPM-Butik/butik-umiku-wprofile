@@ -28,7 +28,7 @@ export function Header() {
     { name: "Produk", href: "/products" },
     { name: "Kategori", href: "/categories" },
     { name: "Blog", href: "/blog" },
-    { name: "Kontak", href: "/contact" },
+    { name: "Tentang", href: "/tentang" },
   ]
 
   return (
@@ -124,6 +124,12 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
+                        <Link href="/admin/category">
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Kelola Kategori</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link href="/admin/blog">
                           <FileText className="mr-2 h-4 w-4" />
                           <span>Kelola Blog</span>
@@ -143,9 +149,9 @@ export function Header() {
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/auth/signin">Masuk</Link>
                 </Button>
-                <Button size="sm" asChild>
+                {/* <Button size="sm" asChild>
                   <Link href="/auth/signup">Daftar</Link>
-                </Button>
+                </Button> */}
               </div>
             )}
 
