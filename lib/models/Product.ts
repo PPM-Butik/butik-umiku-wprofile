@@ -10,6 +10,7 @@ export interface IProduct {
   subcategory?: string;
   sizes: string[];
   colors: string[];
+  fabric: string; // New fabric field
   images: string[];
   stock: number;
   featured: boolean;
@@ -57,6 +58,7 @@ const ProductSchema = new mongoose.Schema(
     subcategory: { type: String },
     sizes: [{ type: String }],
     colors: [{ type: String }],
+    fabric: { type: String, required: true }, // New fabric field - required
     images: [{ type: String, required: true }],
     stock: { type: Number, required: true, default: 0 },
     featured: { type: Boolean, default: false },

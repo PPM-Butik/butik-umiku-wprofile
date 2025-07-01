@@ -67,11 +67,15 @@ interface Product {
   originalPrice?: number;
   category: string;
   subcategory?: string;
+  fabric: string; // Added fabric field
   images: string[];
+  sizes: string[];
+  colors: string[];
   stock: number;
   featured: boolean;
-  rating: number;
+  // rating: number;
   totalReviews: number;
+  tags: string[];
   createdAt: string;
 }
 
@@ -276,9 +280,10 @@ export default function AdminProductsPage() {
                     <TableRow>
                       <TableHead>Produk</TableHead>
                       <TableHead>Kategori</TableHead>
+                      <TableHead>Bahan</TableHead> {/* Added Fabric column */}
                       <TableHead>Harga</TableHead>
                       <TableHead>Stok</TableHead>
-                      <TableHead>Rating</TableHead>
+                      {/* <TableHead>Rating</TableHead> */}
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
@@ -315,6 +320,12 @@ export default function AdminProductsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          {/* Added Fabric display */}
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            {product.fabric || "Tidak tersedia"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div>
                             <p className="font-medium">
                               {formatPrice(product.price)}
@@ -339,7 +350,7 @@ export default function AdminProductsPage() {
                             {product.stock} unit
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        {/* <TableCell>
                           <div className="flex items-center space-x-1">
                             <Star className="w-4 h-4 text-yellow-500 fill-current" />
                             <span className="text-sm font-medium">
@@ -349,7 +360,7 @@ export default function AdminProductsPage() {
                               ({product.totalReviews})
                             </span>
                           </div>
-                        </TableCell>
+                        </TableCell> */}
                         <TableCell>
                           <Badge
                             variant={product.featured ? "default" : "secondary"}

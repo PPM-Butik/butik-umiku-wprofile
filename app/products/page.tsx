@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Star, Eye, Search } from "lucide-react";
+import { Star, Eye, Search, Shirt } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface Product {
@@ -27,6 +27,7 @@ interface Product {
   price: number;
   originalPrice?: number;
   category: string;
+  fabric?: string; // Added fabric field
   images: string[];
   stock: number;
   featured: boolean;
@@ -271,10 +272,20 @@ export default function ProductsPage() {
                         </div>
 
                         <div className="p-4">
-                          <div className="mb-2">
+                          <div className="mb-2 flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">
                               {product.category}
                             </Badge>
+                            {/* Fabric Badge */}
+                            {product.fabric && (
+                              <Badge 
+                                variant="secondary"
+                                className="text-xs flex items-center gap-1"
+                              >
+                                <Shirt className="w-3 h-3" />
+                                {product.fabric}
+                              </Badge>
+                            )}
                           </div>
 
                           <h3 className="font-semibold mb-2 line-clamp-2">
@@ -289,6 +300,14 @@ export default function ProductsPage() {
                           <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                             {product.description}
                           </p>
+
+                          {/* Fabric Information */}
+                          {product.fabric && (
+                            <div className="flex items-center text-xs text-muted-foreground mb-2">
+                              <Shirt className="w-3 h-3 mr-1" />
+                              <span>Bahan: {product.fabric}</span>
+                            </div>
+                          )}
 
                           <div className="flex items-center mb-3">
                             <div className="flex items-center">
@@ -327,6 +346,7 @@ export default function ProductsPage() {
                 </p>
               </div>
             )}
+
 
             {/* Pagination */}
             {totalPages > 1 && (

@@ -61,6 +61,7 @@ export function ImageUpload({
 
           if (!response.ok) {
             const error = await response.json();
+            console.log("Upload error response:", error);
             throw new Error(error.error || "Upload failed");
           }
 

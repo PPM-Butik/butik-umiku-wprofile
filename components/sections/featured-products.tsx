@@ -16,7 +16,7 @@ interface Product {
   originalPrice?: number;
   images: string[];
   category: string;
-  rating?: number;
+  // rating?: number;
   reviews?: number;
   isNew?: boolean;
   discount?: number;
@@ -193,12 +193,12 @@ export function FeaturedProducts() {
                       </h3>
 
                       <div className="flex items-center mb-2">
-                        <div className="flex items-center">
+                        {/* <div className="flex items-center">
                           <Star className="w-4 h-4 text-yellow-500 fill-current" />
                           <span className="text-sm font-medium ml-1">
                             {product.rating || 5.0}
                           </span>
-                        </div>
+                        </div> */}
                         <span className="text-sm text-muted-foreground ml-2">
                           ({product.reviews || 0} ulasan)
                         </span>

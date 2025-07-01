@@ -1,57 +1,77 @@
-"use client"
+// app/admin/products/[id]/edit/page.tsx
 
-import type React from "react"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import { useRouter, useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Plus, X, Save } from "lucide-react"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { toast } from "sonner"
-import { ImageUpload } from "@/components/ui/image-upload"
+import type React from "react";
+
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter, useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Plus, X, Save, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface Product {
-  _id: string
-  name: string
-  description: string
-  price: number
-  originalPrice?: number
-  category: string
-  subcategory?: string
-  sizes: string[]
-  colors: string[]
-  images: string[]
-  stock: number
-  featured: boolean
-  tags: string[]
-  createdAt: string
-  updatedAt: string
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  category: string;
+  subcategory?: string;
+  fabric: string;
+  sizes: string[];
+  colors: string[];
+  images: string[];
+  stock: number;
+  featured: boolean;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Category {
-  _id: string
-  name: string
-  subcategories: string[]
+  _id: string;
+  name: string;
+  description?: string;
+  subcategories: string[];
+  productCount?: number;
+  isActive?: boolean;
 }
 
 export default function EditProductPage() {
-  const { data: session } = useSession()
-  const router = useRouter()
-  const params = useParams()
-  const [loading, setLoading] = useState(false)
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [product, setProduct] = useState<Product | null>(null)
-  const [categories, setCategories] = useState<Category[]>([])
+  const { data: session } = useSession();
+  const router = useRouter();
+  const params = useParams();
+  const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -59,47 +79,66 @@ export default function EditProductPage() {
     originalPrice: "",
     category: "",
     subcategory: "",
+    fabric: "",
     stock: "",
     featured: false,
-  })
-  const [sizes, setSizes] = useState<string[]>([])
-  const [colors, setColors] = useState<string[]>([])
-  const [tags, setTags] = useState<string[]>([])
-  const [images, setImages] = useState<string[]>([])
-  const [newSize, setNewSize] = useState("")
-  const [newColor, setNewColor] = useState("")
-  const [newTag, setNewTag] = useState("")
+  });
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [colors, setColors] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+  const [newSize, setNewSize] = useState("");
+  const [newColor, setNewColor] = useState("");
+  const [newTag, setNewTag] = useState("");
 
   useEffect(() => {
-    fetchCategories()
+    fetchCategories();
     if (params.id) {
-      fetchProduct()
+      fetchProduct();
     }
-  }, [params.id])
+  }, [params.id]);
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories?limit=50")
-      const data = await response.json()
+      setCategoriesLoading(true);
+      setCategoriesError(null);
 
-      if (response.ok) {
-        setCategories(data.categories)
-      } else {
-        toast.error("Gagal memuat kategori")
+      const response = await fetch(
+        "/api/categories?limit=100&sortBy=name&sortOrder=asc"
+      );
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Gagal memuat kategori");
+      }
+
+      const activeCategories = data.categories.filter(
+        (cat: Category) => cat.isActive !== false
+      );
+
+      setCategories(activeCategories);
+
+      if (data.isDemo) {
+        toast.info("Menggunakan kategori demo - database tidak terkoneksi");
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan saat memuat kategori")
+      const msg =
+        error instanceof Error ? error.message : "Terjadi kesalahan kategori";
+      setCategoriesError(msg);
+      toast.error(msg);
+    } finally {
+      setCategoriesLoading(false);
     }
-  }
+  };
 
   const fetchProduct = async () => {
     try {
-      setFetchLoading(true)
-      const response = await fetch(`/api/products/${params.id}`)
+      setFetchLoading(true);
+      const response = await fetch(`/api/products/${params.id}`);
 
       if (response.ok) {
-        const data = await response.json()
-        setProduct(data)
+        const data = await response.json();
+        setProduct(data);
         setFormData({
           name: data.name || "",
           description: data.description || "",
@@ -107,107 +146,121 @@ export default function EditProductPage() {
           originalPrice: data.originalPrice?.toString() || "",
           category: data.category || "",
           subcategory: data.subcategory || "",
+          fabric: data.fabric || "",
           stock: data.stock?.toString() || "",
           featured: data.featured || false,
-        })
-        setSizes(data.sizes || [])
-        setColors(data.colors || [])
-        setTags(data.tags || [])
-        setImages(data.images || [])
+        });
+        setSizes(data.sizes || []);
+        setColors(data.colors || []);
+        setTags(data.tags || []);
+        setImages(data.images || []);
       } else {
-        toast.error("Gagal memuat produk")
-        router.push("/admin/products")
+        toast.error("Gagal memuat produk");
+        router.push("/admin/products");
       }
     } catch (error) {
-      console.error("Error fetching product:", error)
-      toast.error("Terjadi kesalahan saat memuat produk")
-      router.push("/admin/products")
+      console.error("Error fetching product:", error);
+      toast.error("Terjadi kesalahan saat memuat produk");
+      router.push("/admin/products");
     } finally {
-      setFetchLoading(false)
+      setFetchLoading(false);
     }
-  }
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
+    }));
 
-    // Reset subcategory when category changes
     if (name === "category") {
       setFormData((prev) => ({
         ...prev,
         subcategory: "",
-      }))
+      }));
     }
-  }
+  };
 
   const addSize = () => {
     if (newSize && !sizes.includes(newSize)) {
-      setSizes([...sizes, newSize])
-      setNewSize("")
+      setSizes([...sizes, newSize]);
+      setNewSize("");
     }
-  }
+  };
 
   const removeSize = (size: string) => {
-    setSizes(sizes.filter((s) => s !== size))
-  }
+    setSizes(sizes.filter((s) => s !== size));
+  };
 
   const addColor = () => {
     if (newColor && !colors.includes(newColor)) {
-      setColors([...colors, newColor])
-      setNewColor("")
+      setColors([...colors, newColor]);
+      setNewColor("");
     }
-  }
+  };
 
   const removeColor = (color: string) => {
-    setColors(colors.filter((c) => c !== color))
-  }
+    setColors(colors.filter((c) => c !== color));
+  };
 
   const addTag = () => {
     if (newTag && !tags.includes(newTag)) {
-      setTags([...tags, newTag])
-      setNewTag("")
+      setTags([...tags, newTag]);
+      setNewTag("");
     }
-  }
+  };
 
   const removeTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag))
-  }
+    setTags(tags.filter((t) => t !== tag));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!formData.name || !formData.description || !formData.price || !formData.category || images.length === 0) {
-      toast.error("Mohon lengkapi semua field yang wajib diisi dan upload minimal 1 gambar")
-      return
+    if (
+      !formData.name ||
+      !formData.description ||
+      !formData.price ||
+      !formData.category ||
+      !formData.fabric ||
+      images.length === 0
+    ) {
+      toast.error(
+        "Mohon lengkapi semua field yang wajib diisi dan upload minimal 1 gambar"
+      );
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
       const productData = {
         name: formData.name,
         description: formData.description,
         price: Number.parseInt(formData.price),
-        originalPrice: formData.originalPrice ? Number.parseInt(formData.originalPrice) : undefined,
+        originalPrice: formData.originalPrice
+          ? Number.parseInt(formData.originalPrice)
+          : undefined,
         category: formData.category,
         subcategory: formData.subcategory || undefined,
+        fabric: formData.fabric,
         sizes,
         colors,
         images,
         stock: Number.parseInt(formData.stock) || 0,
         featured: formData.featured,
         tags,
-      }
+      };
 
       const response = await fetch(`/api/products/${params.id}`, {
         method: "PUT",
@@ -215,30 +268,32 @@ export default function EditProductPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(productData),
-      })
+      });
 
       if (response.ok) {
-        toast.success("Produk berhasil diperbarui")
-        router.push("/admin/products")
+        toast.success("Produk berhasil diperbarui");
+        router.push("/admin/products");
       } else {
-        const error = await response.json()
-        toast.error(error.error || "Gagal memperbarui produk")
+        const error = await response.json();
+        toast.error(error.error || "Gagal memperbarui produk");
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan saat memperbarui produk")
+      toast.error("Terjadi kesalahan saat memperbarui produk");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const selectedCategory = categories.find((cat) => cat.name === formData.category)
+  const selectedCategory = categories.find(
+    (cat) => cat.name === formData.category
+  );
 
   if (fetchLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-rose-600"></div>
       </div>
-    )
+    );
   }
 
   if (!product) {
@@ -251,14 +306,18 @@ export default function EditProductPage() {
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/admin/products">
@@ -267,7 +326,9 @@ export default function EditProductPage() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Edit Produk</h1>
-              <p className="text-muted-foreground">Edit produk yang sudah ada di katalog toko</p>
+              <p className="text-muted-foreground">
+                Edit produk yang sudah ada di katalog toko
+              </p>
             </div>
           </div>
         </motion.div>
@@ -277,11 +338,17 @@ export default function EditProductPage() {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Basic Information */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle>Informasi Dasar</CardTitle>
-                    <CardDescription>Informasi utama tentang produk</CardDescription>
+                    <CardDescription>
+                      Informasi utama tentang produk
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -307,12 +374,27 @@ export default function EditProductPage() {
                         required
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="fabric">Bahan/Fabric *</Label>
+                      <Input
+                        id="fabric"
+                        name="fabric"
+                        value={formData.fabric}
+                        onChange={handleInputChange}
+                        placeholder="Masukkan jenis bahan (misal: Katun Premium, Polyester, dll)"
+                        required
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
 
               {/* Pricing */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle>Harga</CardTitle>
@@ -333,7 +415,9 @@ export default function EditProductPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="originalPrice">Harga Asli (Opsional)</Label>
+                        <Label htmlFor="originalPrice">
+                          Harga Asli (Opsional)
+                        </Label>
                         <Input
                           id="originalPrice"
                           name="originalPrice"
@@ -349,11 +433,17 @@ export default function EditProductPage() {
               </motion.div>
 
               {/* Variants */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle>Varian Produk</CardTitle>
-                    <CardDescription>Ukuran, warna, dan tag produk</CardDescription>
+                    <CardDescription>
+                      Ukuran, warna, dan tag produk
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Sizes */}
@@ -364,7 +454,9 @@ export default function EditProductPage() {
                           value={newSize}
                           onChange={(e) => setNewSize(e.target.value)}
                           placeholder="Tambah ukuran"
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSize())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && (e.preventDefault(), addSize())
+                          }
                         />
                         <Button type="button" onClick={addSize}>
                           <Plus className="h-4 w-4" />
@@ -372,9 +464,16 @@ export default function EditProductPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {sizes.map((size) => (
-                          <Badge key={size} variant="secondary" className="cursor-pointer">
+                          <Badge
+                            key={size}
+                            variant="secondary"
+                            className="cursor-pointer"
+                          >
                             {size}
-                            <X className="h-3 w-3 ml-1" onClick={() => removeSize(size)} />
+                            <X
+                              className="h-3 w-3 ml-1"
+                              onClick={() => removeSize(size)}
+                            />
                           </Badge>
                         ))}
                       </div>
@@ -390,7 +489,10 @@ export default function EditProductPage() {
                           value={newColor}
                           onChange={(e) => setNewColor(e.target.value)}
                           placeholder="Tambah warna"
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addColor())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" &&
+                            (e.preventDefault(), addColor())
+                          }
                         />
                         <Button type="button" onClick={addColor}>
                           <Plus className="h-4 w-4" />
@@ -398,9 +500,16 @@ export default function EditProductPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {colors.map((color) => (
-                          <Badge key={color} variant="secondary" className="cursor-pointer">
+                          <Badge
+                            key={color}
+                            variant="secondary"
+                            className="cursor-pointer"
+                          >
                             {color}
-                            <X className="h-3 w-3 ml-1" onClick={() => removeColor(color)} />
+                            <X
+                              className="h-3 w-3 ml-1"
+                              onClick={() => removeColor(color)}
+                            />
                           </Badge>
                         ))}
                       </div>
@@ -416,7 +525,9 @@ export default function EditProductPage() {
                           value={newTag}
                           onChange={(e) => setNewTag(e.target.value)}
                           placeholder="Tambah tag"
-                          onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && (e.preventDefault(), addTag())
+                          }
                         />
                         <Button type="button" onClick={addTag}>
                           <Plus className="h-4 w-4" />
@@ -424,9 +535,16 @@ export default function EditProductPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {tags.map((tag) => (
-                          <Badge key={tag} variant="outline" className="cursor-pointer">
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="cursor-pointer"
+                          >
                             {tag}
-                            <X className="h-3 w-3 ml-1" onClick={() => removeTag(tag)} />
+                            <X
+                              className="h-3 w-3 ml-1"
+                              onClick={() => removeTag(tag)}
+                            />
                           </Badge>
                         ))}
                       </div>
@@ -436,11 +554,17 @@ export default function EditProductPage() {
               </motion.div>
 
               {/* Images */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle>Gambar Produk *</CardTitle>
-                    <CardDescription>Upload gambar produk (minimal 1 gambar, maksimal 5 gambar)</CardDescription>
+                    <CardDescription>
+                      Upload gambar produk (minimal 1 gambar, maksimal 5 gambar)
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ImageUpload
@@ -458,7 +582,11 @@ export default function EditProductPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Category & Stock */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle>Kategori & Stok</CardTitle>
@@ -468,14 +596,19 @@ export default function EditProductPage() {
                       <Label>Kategori *</Label>
                       <Select
                         value={formData.category}
-                        onValueChange={(value) => handleSelectChange("category", value)}
+                        onValueChange={(value) =>
+                          handleSelectChange("category", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih kategori" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((category) => (
-                            <SelectItem key={category._id} value={category.name}>
+                            <SelectItem
+                              key={category._id}
+                              value={category.name}
+                            >
                               {category.name}
                             </SelectItem>
                           ))}
@@ -483,26 +616,29 @@ export default function EditProductPage() {
                       </Select>
                     </div>
 
-                    {selectedCategory && selectedCategory.subcategories.length > 0 && (
-                      <div>
-                        <Label>Sub Kategori</Label>
-                        <Select
-                          value={formData.subcategory}
-                          onValueChange={(value) => handleSelectChange("subcategory", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih sub kategori" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory.subcategories.map((sub) => (
-                              <SelectItem key={sub} value={sub}>
-                                {sub}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    {selectedCategory &&
+                      selectedCategory.subcategories.length > 0 && (
+                        <div>
+                          <Label>Sub Kategori</Label>
+                          <Select
+                            value={formData.subcategory}
+                            onValueChange={(value) =>
+                              handleSelectChange("subcategory", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih sub kategori" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory.subcategories.map((sub) => (
+                                <SelectItem key={sub} value={sub}>
+                                  {sub}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
 
                     <div>
                       <Label htmlFor="stock">Stok</Label>
@@ -520,7 +656,11 @@ export default function EditProductPage() {
               </motion.div>
 
               {/* Settings */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle>Pengaturan</CardTitle>
@@ -529,7 +669,9 @@ export default function EditProductPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <Label>Produk Unggulan</Label>
-                        <p className="text-sm text-muted-foreground">Tampilkan di halaman utama</p>
+                        <p className="text-sm text-muted-foreground">
+                          Tampilkan di halaman utama
+                        </p>
                       </div>
                       <Switch
                         checked={formData.featured}
@@ -546,15 +688,28 @@ export default function EditProductPage() {
               </motion.div>
 
               {/* Actions */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
                 <Card>
                   <CardContent className="p-6">
                     <div className="space-y-3">
-                      <Button type="submit" className="w-full" disabled={loading}>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={loading}
+                      >
                         <Save className="w-4 h-4 mr-2" />
                         {loading ? "Menyimpan..." : "Perbarui Produk"}
                       </Button>
-                      <Button type="button" variant="outline" className="w-full" asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        asChild
+                      >
                         <Link href="/admin/products">Batal</Link>
                       </Button>
                     </div>
@@ -566,5 +721,5 @@ export default function EditProductPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

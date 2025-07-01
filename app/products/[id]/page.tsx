@@ -36,15 +36,17 @@ interface Product {
   subcategory?: string;
   sizes: string[];
   colors: string[];
+  fabric: string;
   images: string[];
   stock: number;
   featured: boolean;
   tags: string[];
-  rating: number;
+  // rating: number;
   totalReviews: number;
 }
 
 export default function ProductDetailPage() {
+  const [showModal, setShowModal] = useState(false);
   const params = useParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,31 +69,11 @@ export default function ProductDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setProduct(data);
+        console.log("Fetched product:", data);
       } else {
         // Fallback to demo product if API fails
-        const demoProduct: Product = {
-          _id: params.id as string,
-          name: "Gamis Syari Elegant Premium",
-          description:
-            "Gamis syari dengan bahan premium dan desain elegan yang cocok untuk berbagai acara. Dibuat dengan bahan berkualitas tinggi yang nyaman digunakan sehari-hari. Desain yang timeless dan elegan membuat Anda tampil percaya diri dalam berbagai kesempatan.",
-          price: 299000,
-          originalPrice: 399000,
-          category: "Gamis",
-          subcategory: "Syari",
-          sizes: ["S", "M", "L", "XL", "XXL"],
-          colors: ["Hitam", "Navy", "Maroon", "Dusty Pink", "Salem"],
-          images: [
-            "https://images.pexels.com/photos/7691483/pexels-photo-7691483.jpeg?auto=compress&cs=tinysrgb&w=600",
-            "https://images.pexels.com/photos/7691478/pexels-photo-7691478.jpeg?auto=compress&cs=tinysrgb&w=600",
-            "https://images.pexels.com/photos/7691442/pexels-photo-7691442.jpeg?auto=compress&cs=tinysrgb&w=600",
-          ],
-          stock: 25,
-          featured: true,
-          tags: ["syari", "elegant", "premium", "daily wear"],
-          rating: 4.8,
-          totalReviews: 45,
-        };
-        setProduct(demoProduct);
+        // const demoProduct: Product = {};
+        // setProduct(demoProduct);
       }
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -179,7 +161,7 @@ export default function ProductDetailPage() {
                   animate={{ opacity: 1, x: 0 }}
                   className="space-y-4"
                 >
-                  <div className="aspect-square overflow-hidden rounded-lg">
+                  <div className="h-[400px] w-full overflow-hidden rounded-lg">
                     <img
                       src={
                         product.images[selectedImage] ||
@@ -233,7 +215,7 @@ export default function ProductDetailPage() {
                   <h1 className="text-3xl font-bold">{product.name}</h1>
 
                   {/* Rating */}
-                  <div className="flex items-center space-x-2">
+                  {/* <div className="flex items-center space-x-2">
                     <div className="flex items-center">
                       {[...Array(5)].map((_, i) => (
                         <Star
@@ -252,7 +234,7 @@ export default function ProductDetailPage() {
                     <span className="text-muted-foreground">
                       ({product.totalReviews} ulasan)
                     </span>
-                  </div>
+                  </div> */}
 
                   {/* Price */}
                   <div className="space-y-2">
@@ -329,6 +311,15 @@ export default function ProductDetailPage() {
                     </div>
                   )}
 
+                  <div className="flex items-center space-x-2">
+                    {product.fabric && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">Bahan:</span>
+                        <Badge variant="outline">{product.fabric}</Badge>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Stock Info */}
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-medium">Stok:</span>
@@ -348,7 +339,7 @@ export default function ProductDetailPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="space-y-4">
+                  {/* <div className="space-y-4">
                     <div className="flex space-x-4">
                       <Button
                         size="lg"
@@ -373,10 +364,21 @@ export default function ProductDetailPage() {
                         Beli Sekarang
                       </Button>
                     )}
+                  </div> */}
+
+                  <div className="space-y-4">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full"
+                      onClick={() => setShowModal(true)}
+                    >
+                      Beli Sekarang
+                    </Button>
                   </div>
 
                   {/* Features */}
-                  <div className="grid grid-cols-3 gap-4 pt-6 border-t">
+                  {/* <div className="grid grid-cols-3 gap-4 pt-6 border-t">
                     <div className="text-center">
                       <Truck className="w-6 h-6 mx-auto mb-2 text-rose-600" />
                       <p className="text-sm font-medium">Gratis Ongkir</p>
@@ -398,7 +400,7 @@ export default function ProductDetailPage() {
                         7 hari tukar barang
                       </p>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Tags */}
                   {product.tags.length > 0 && (
@@ -425,6 +427,48 @@ export default function ProductDetailPage() {
       </main>
 
       <Footer />
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4 relative text-gray-800">
+            {/* Tombol Tutup */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-2 right-3 text-black/70 hover:text-black text-2xl font-bold"
+              aria-label="Tutup"
+            >
+              ×
+            </button>
+
+            <h2 className="text-xl font-semibold text-center">
+              Lokasi Toko & Kontak
+            </h2>
+
+            {/* Google Maps Embed */}
+            <div className="rounded overflow-hidden aspect-video">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3960.880601134753!2d108.9820827!3d-6.9048788!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e6fa5b08df9cff5%3A0x47dd0aebe785d3a8!2sButik%20Umiku%20Ethica%20Store%20Banjaratma%20Bulakamba!5e0!3m2!1sid!2sid!4v1751400783747!5m2!1sid!2sid"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
+
+            {/* Tombol WhatsApp */}
+            <a
+              href="https://wa.me/6281234567890" 
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold">
+                Chat via WhatsApp
+              </Button>
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
