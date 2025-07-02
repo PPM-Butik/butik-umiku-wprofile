@@ -173,14 +173,14 @@ export default function SignInPage() {
               </div>
             </div>
 
-            <div className="text-center">
+            {/* <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 Belum punya akun?{" "}
                 <Link href="/auth/signup" className="text-rose-600 hover:underline font-medium">
                   Daftar sekarang
                 </Link>
               </p>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </motion.div>

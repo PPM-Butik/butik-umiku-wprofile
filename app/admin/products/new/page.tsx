@@ -26,23 +26,38 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Plus, X, Save } from "lucide-react";
+import { ArrowLeft, Plus, X, Save, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Category {
   _id: string;
   name: string;
+  description?: string;
   subcategories: string[];
+  productCount?: number;
+  isActive?: boolean;
+}
+
+interface CategoriesResponse {
+  categories: Category[];
+  currentPage: number;
+  totalPages: number;
+  totalCategories: number;
+  isDemo?: boolean;
+  error?: string;
 }
 
 export default function NewProductPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -50,6 +65,7 @@ export default function NewProductPage() {
     originalPrice: "",
     category: "",
     subcategory: "",
+    fabric: "",
     stock: "",
     featured: false,
   });
@@ -67,16 +83,49 @@ export default function NewProductPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories?limit=50");
-      const data = await response.json();
+      setCategoriesLoading(true);
+      setCategoriesError(null);
 
-      if (response.ok) {
-        setCategories(data.categories);
-      } else {
-        toast.error("Gagal memuat kategori");
+      // Fetch all categories without pagination for product form
+      const response = await fetch(
+        "/api/categories?limit=100&sortBy=name&sortOrder=asc"
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data: CategoriesResponse = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Filter only active categories
+      const activeCategories = data.categories.filter(
+        (cat) => cat.isActive !== false
+      );
+      setCategories(activeCategories);
+
+      // Show demo mode warning if applicable
+      if (data.isDemo) {
+        toast.info("Using demo categories - database not connected");
+      }
+
+      console.log(
+        `Loaded ${activeCategories.length} categories for product form`
+      );
     } catch (error) {
-      toast.error("Terjadi kesalahan saat memuat kategori");
+      console.error("Error fetching categories:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load categories";
+      setCategoriesError(errorMessage);
+      toast.error(`Failed to load categories: ${errorMessage}`);
+
+      // Set empty categories array on error
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
     }
   };
 
@@ -146,12 +195,38 @@ export default function NewProductPage() {
       !formData.description ||
       !formData.price ||
       !formData.category ||
+      !formData.fabric ||
       images.length === 0
     ) {
       toast.error(
-        "Mohon lengkapi semua field yang wajib diisi dan upload minimal 1 gambar"
+        "Please complete all required fields (name, description, price, category, fabric) and upload at least 1 image"
       );
       return;
+    }
+
+    // Validate category exists in the loaded categories
+    const categoryExists = categories.some(
+      (cat) => cat.name === formData.category
+    );
+    if (!categoryExists) {
+      toast.error(
+        "Selected category is not valid. Please refresh and try again."
+      );
+      return;
+    }
+
+    // Validate subcategory if provided
+    if (formData.subcategory) {
+      const selectedCategory = categories.find(
+        (cat) => cat.name === formData.category
+      );
+      const subcategoryExists = selectedCategory?.subcategories.includes(
+        formData.subcategory
+      );
+      if (!subcategoryExists) {
+        toast.error("Selected subcategory is not valid for this category.");
+        return;
+      }
     }
 
     setLoading(true);
@@ -166,6 +241,7 @@ export default function NewProductPage() {
           : undefined,
         category: formData.category,
         subcategory: formData.subcategory || undefined,
+        fabric: formData.fabric,
         sizes,
         colors,
         images,
@@ -183,14 +259,15 @@ export default function NewProductPage() {
       });
 
       if (response.ok) {
-        toast.success("Produk berhasil ditambahkan");
+        toast.success("Product successfully added");
         router.push("/admin/products");
       } else {
         const error = await response.json();
-        toast.error(error.error || "Gagal menambahkan produk");
+        toast.error(error.error || "Failed to add product");
       }
     } catch (error) {
-      toast.error("Terjadi kesalahan saat menambahkan produk");
+      console.error("Error adding product:", error);
+      toast.error("An error occurred while adding the product");
     } finally {
       setLoading(false);
     }
@@ -216,13 +293,42 @@ export default function NewProductPage() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Tambah Produk Baru</h1>
+              <h1 className="text-3xl font-bold">Add New Product</h1>
               <p className="text-muted-foreground">
-                Tambahkan produk baru ke katalog toko
+                Add a new product to the store catalog
               </p>
             </div>
           </div>
         </motion.div>
+
+        {/* Categories Error Alert */}
+        {categoriesError && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Failed to load categories: {categoriesError}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-2"
+                  onClick={fetchCategories}
+                  disabled={categoriesLoading}
+                >
+                  {categoriesLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Retry"
+                  )}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -236,32 +342,43 @@ export default function NewProductPage() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Informasi Dasar</CardTitle>
+                    <CardTitle>Basic Information</CardTitle>
                     <CardDescription>
-                      Informasi utama tentang produk
+                      Main information about the product
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="name">Nama Produk *</Label>
+                      <Label htmlFor="name">Product Name *</Label>
                       <Input
                         id="name"
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        placeholder="Masukkan nama produk"
+                        placeholder="Enter product name"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="description">Deskripsi *</Label>
+                      <Label htmlFor="description">Description *</Label>
                       <Textarea
                         id="description"
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
-                        placeholder="Masukkan deskripsi produk"
+                        placeholder="Enter product description"
                         rows={4}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="fabric">Fabric/Material *</Label>
+                      <Input
+                        id="fabric"
+                        name="fabric"
+                        value={formData.fabric}
+                        onChange={handleInputChange}
+                        placeholder="Enter fabric type (e.g., Cotton, Polyester, Denim, etc.)"
                         required
                       />
                     </div>
@@ -277,13 +394,13 @@ export default function NewProductPage() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Harga</CardTitle>
-                    <CardDescription>Atur harga produk</CardDescription>
+                    <CardTitle>Pricing</CardTitle>
+                    <CardDescription>Set product pricing</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="price">Harga Jual *</Label>
+                        <Label htmlFor="price">Sale Price *</Label>
                         <Input
                           id="price"
                           name="price"
@@ -296,7 +413,7 @@ export default function NewProductPage() {
                       </div>
                       <div>
                         <Label htmlFor="originalPrice">
-                          Harga Asli (Opsional)
+                          Original Price (Optional)
                         </Label>
                         <Input
                           id="originalPrice"
@@ -320,20 +437,20 @@ export default function NewProductPage() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Varian Produk</CardTitle>
+                    <CardTitle>Product Variants</CardTitle>
                     <CardDescription>
-                      Ukuran, warna, dan tag produk
+                      Product sizes, colors, and tags
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Sizes */}
                     <div>
-                      <Label>Ukuran</Label>
+                      <Label>Sizes</Label>
                       <div className="flex space-x-2 mt-2">
                         <Input
                           value={newSize}
                           onChange={(e) => setNewSize(e.target.value)}
-                          placeholder="Tambah ukuran"
+                          placeholder="Add size"
                           onKeyPress={(e) =>
                             e.key === "Enter" && (e.preventDefault(), addSize())
                           }
@@ -363,12 +480,12 @@ export default function NewProductPage() {
 
                     {/* Colors */}
                     <div>
-                      <Label>Warna</Label>
+                      <Label>Colors</Label>
                       <div className="flex space-x-2 mt-2">
                         <Input
                           value={newColor}
                           onChange={(e) => setNewColor(e.target.value)}
-                          placeholder="Tambah warna"
+                          placeholder="Add color"
                           onKeyPress={(e) =>
                             e.key === "Enter" &&
                             (e.preventDefault(), addColor())
@@ -399,12 +516,12 @@ export default function NewProductPage() {
 
                     {/* Tags */}
                     <div>
-                      <Label>Tag</Label>
+                      <Label>Tags</Label>
                       <div className="flex space-x-2 mt-2">
                         <Input
                           value={newTag}
                           onChange={(e) => setNewTag(e.target.value)}
-                          placeholder="Tambah tag"
+                          placeholder="Add tag"
                           onKeyPress={(e) =>
                             e.key === "Enter" && (e.preventDefault(), addTag())
                           }
@@ -441,9 +558,9 @@ export default function NewProductPage() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Gambar Produk *</CardTitle>
+                    <CardTitle>Product Images *</CardTitle>
                     <CardDescription>
-                      Upload gambar produk (minimal 1 gambar, maksimal 5 gambar)
+                      Upload product images (minimum 1 image, maximum 5 images)
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -469,48 +586,68 @@ export default function NewProductPage() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Kategori & Stok</CardTitle>
+                    <CardTitle>Category & Stock</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label>Kategori *</Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) =>
-                          handleSelectChange("category", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih kategori" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem
-                              key={category._id}
-                              value={category.name}
+                      <Label>Category *</Label>
+                      {categoriesLoading ? (
+                        <div className="flex items-center space-x-2 p-2 border rounded">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm text-muted-foreground">
+                            Loading categories...
+                          </span>
+                        </div>
+                      ) : categories.length === 0 ? (
+                        <div className="space-y-2">
+                          <Select disabled>
+                            <SelectTrigger>
+                              <SelectValue placeholder="No categories available" />
+                            </SelectTrigger>
+                          </Select>
+                          <p className="text-sm text-muted-foreground">
+                            No categories found.{" "}
+                            <Link
+                              href="/admin/categories/new"
+                              className="text-rose-600 hover:underline"
                             >
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {categories.length === 0 && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Belum ada kategori.{" "}
-                          <Link
-                            href="/admin/categories/new"
-                            className="text-rose-600 hover:underline"
-                          >
-                            Buat kategori baru
-                          </Link>
-                        </p>
+                              Create a new category
+                            </Link>
+                          </p>
+                        </div>
+                      ) : (
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) =>
+                            handleSelectChange("category", value)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem
+                                key={category._id}
+                                value={category.name}
+                              >
+                                {category.name}
+                                {category.productCount !== undefined && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    ({category.productCount} products)
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
 
                     {selectedCategory &&
                       selectedCategory.subcategories.length > 0 && (
                         <div>
-                          <Label>Sub Kategori</Label>
+                          <Label>Subcategory</Label>
                           <Select
                             value={formData.subcategory}
                             onValueChange={(value) =>
@@ -518,7 +655,7 @@ export default function NewProductPage() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Pilih sub kategori" />
+                              <SelectValue placeholder="Select subcategory" />
                             </SelectTrigger>
                             <SelectContent>
                               {selectedCategory.subcategories.map((sub) => (
@@ -532,7 +669,7 @@ export default function NewProductPage() {
                       )}
 
                     <div>
-                      <Label htmlFor="stock">Stok</Label>
+                      <Label htmlFor="stock">Stock</Label>
                       <Input
                         id="stock"
                         name="stock"
@@ -554,14 +691,14 @@ export default function NewProductPage() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Pengaturan</CardTitle>
+                    <CardTitle>Settings</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label>Produk Unggulan</Label>
+                        <Label>Featured Product</Label>
                         <p className="text-sm text-muted-foreground">
-                          Tampilkan di halaman utama
+                          Display on home page
                         </p>
                       </div>
                       <Switch
@@ -590,10 +727,19 @@ export default function NewProductPage() {
                       <Button
                         type="submit"
                         className="w-full"
-                        disabled={loading}
+                        disabled={loading || categories.length === 0}
                       >
-                        <Save className="w-4 h-4 mr-2" />
-                        {loading ? "Menyimpan..." : "Simpan Produk"}
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4 mr-2" />
+                            Save Product
+                          </>
+                        )}
                       </Button>
                       <Button
                         type="button"
@@ -601,7 +747,7 @@ export default function NewProductPage() {
                         className="w-full"
                         asChild
                       >
-                        <Link href="/admin/products">Batal</Link>
+                        <Link href="/admin/products">Cancel</Link>
                       </Button>
                     </div>
                   </CardContent>

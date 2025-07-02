@@ -11,6 +11,8 @@ interface ProductType {
   price: number;
   originalPrice?: number;
   category: string;
+  subcategory?: string;
+  fabric: string; // Added fabric field
   images: string[];
   sizes: string[];
   colors: string[];
@@ -59,6 +61,7 @@ export async function GET(request: NextRequest) {
           { name: { $regex: search, $options: "i" } },
           { description: { $regex: search, $options: "i" } },
           { category: { $regex: search, $options: "i" } },
+          { fabric: { $regex: search, $options: "i" } }, // Added fabric to search
         ];
       }
 
@@ -91,6 +94,8 @@ export async function GET(request: NextRequest) {
         price: product.price || 0,
         originalPrice: product.originalPrice,
         category: product.category || "",
+        subcategory: product.subcategory || "",
+        fabric: product.fabric || "", // Added fabric field
         images: product.images || [],
         sizes: product.sizes || [],
         colors: product.colors || [],
@@ -160,6 +165,8 @@ export async function POST(request: NextRequest) {
       price,
       originalPrice,
       category,
+      subcategory,
+      fabric, // Added fabric field
       images,
       sizes,
       colors,
@@ -174,11 +181,15 @@ export async function POST(request: NextRequest) {
       !description ||
       !price ||
       !category ||
+      !fabric || // Added fabric validation
       !images ||
       images.length === 0
     ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        {
+          error:
+            "Missing required fields (name, description, price, category, fabric, images)",
+        },
         { status: 400 }
       );
     }
@@ -200,18 +211,26 @@ export async function POST(request: NextRequest) {
         ? Number.parseFloat(originalPrice)
         : undefined,
       category,
+      subcategory: subcategory || undefined,
+      fabric, // Added fabric field
       images: Array.isArray(images) ? images : [images],
       sizes: Array.isArray(sizes)
         ? sizes
-        : sizes.split(",").map((size: string) => size.trim()),
+        : sizes
+        ? sizes.split(",").map((size: string) => size.trim())
+        : [],
       colors: Array.isArray(colors)
         ? colors
-        : colors.split(",").map((color: string) => color.trim()),
-      stock: Number.parseInt(stock),
+        : colors
+        ? colors.split(",").map((color: string) => color.trim())
+        : [],
+      stock: Number.parseInt(stock) || 0,
       featured: featured || false,
       tags: Array.isArray(tags)
         ? tags
-        : tags.split(",").map((tag: string) => tag.trim()),
+        : tags
+        ? tags.split(",").map((tag: string) => tag.trim())
+        : [],
       rating: 0,
       totalReviews: 0,
     });
@@ -227,6 +246,8 @@ export async function POST(request: NextRequest) {
       price: product.price,
       originalPrice: product.originalPrice,
       category: product.category,
+      subcategory: product.subcategory,
+      fabric: product.fabric, // Added fabric field
       images: product.images,
       sizes: product.sizes,
       colors: product.colors,
