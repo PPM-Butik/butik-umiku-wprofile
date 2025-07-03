@@ -150,14 +150,14 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
+                {/* <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/admin/profile">Profil</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/admin/settings">Pengaturan</Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/auth/signin" })}>
                   <LogOut className="mr-2 h-4 w-4" />
