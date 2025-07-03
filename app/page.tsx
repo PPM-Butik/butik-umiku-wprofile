@@ -7,7 +7,8 @@ import { FeaturedProducts } from "@/components/sections/featured-products";
 import { CategoriesSection } from "@/components/sections/categories-section";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
 import { BlogSection } from "@/components/sections/blog-section";
-import { NewsletterSection } from "@/components/sections/newsletter-section";
+// import { NewsletterSection } from "@/components/sections/newsletter-section";
+import { SocialMediaSection } from "@/components/sections/social-media-section";
 
 export default function Home() {
   return (
@@ -19,7 +20,8 @@ export default function Home() {
         <CategoriesSection />
         <TestimonialsSection />
         <BlogSection />
-        <NewsletterSection />
+        {/* <NewsletterSection /> */}
+        <SocialMediaSection />
       </main>
       <Footer />
     </div>
