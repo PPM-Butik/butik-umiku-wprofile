@@ -37,7 +37,7 @@ const getCategoryImage = (categoryName: string) => {
   const key = categoryName.toLowerCase()
   return (
     imageMap[key] ||
-    "https://images.pexels.com/photos/7691483/pexels-photo-7691483.jpeg?auto=compress&cs=tinysrgb&w=400"
+    "https://i.pinimg.com/736x/db/5c/aa/db5caa8f76815f7e3f0ec884410acb86.jpg"
   )
 }
 
@@ -167,7 +167,7 @@ export function CategoriesSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <Link href={`/categories/${category.name.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <Link href={`/categories/${category._id}`}>
                     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer">
                       <CardContent className="p-0">
                         <div className="relative overflow-hidden">

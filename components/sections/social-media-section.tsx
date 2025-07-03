@@ -190,10 +190,10 @@ export function SocialMediaSection() {
               <div className="w-2 h-2 bg-purple-500 rounded-full" />
               <span>Update Harian</span>
             </div>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-rose-500 rounded-full" />
               <span>5K+ Followers</span>
-            </div>
+            </div> */}
           </motion.div>
         </div>
       </div>
