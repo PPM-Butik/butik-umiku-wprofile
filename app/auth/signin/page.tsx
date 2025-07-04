@@ -151,7 +151,7 @@ export default function SignInPage() {
             <Separator />
 
             {/* Demo Accounts */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+            {/* <div className="bg-muted/50 rounded-lg p-4 space-y-3">
               <p className="text-sm font-medium">Demo Accounts:</p>
               <div className="space-y-2">
                 <Button
@@ -162,16 +162,16 @@ export default function SignInPage() {
                 >
                   <strong className="mr-2">Admin:</strong> admin@ethicastore.com / admin123
                 </Button>
-                {/* <Button
+                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-xs"
                   onClick={() => handleDemoLogin("user@ethicastore.com", "user123")}
                 >
                   <strong className="mr-2">User:</strong> user@ethicastore.com / user123
-                </Button> */}
+                </Button> 
               </div>
-            </div>
+            </div> */}
 
             {/* <div className="text-center">
               <p className="text-sm text-muted-foreground">

@@ -17,7 +17,7 @@ interface Product {
   images: string[];
   category: string;
   // rating?: number;
-  reviews?: number;
+  // reviews?: number;
   isNew?: boolean;
   discount?: number;
   featured?: boolean;
@@ -199,9 +199,9 @@ export function FeaturedProducts() {
                             {product.rating || 5.0}
                           </span>
                         </div> */}
-                        <span className="text-sm text-muted-foreground ml-2">
+                        {/* <span className="text-sm text-muted-foreground ml-2">
                           ({product.reviews || 0} ulasan)
-                        </span>
+                        </span> */}
                       </div>
 
                       <div className="flex items-center justify-between">
