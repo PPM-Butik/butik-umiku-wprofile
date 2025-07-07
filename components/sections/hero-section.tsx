@@ -82,9 +82,9 @@ export function HeroSection() {
           >
             <div className="relative rounded-2xl overflow-hidden shadow-2xl max-w-lg w-full">
               <img
-                src="https://scontent.fsrg5-3.fna.fbcdn.net/v/t39.30808-6/328105032_753411729439023_4744433210995863810_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFHrXJHo4EUatlICQDpn4_E3hmpbLJ1sZfeGalssnWxl6VYWTi9v2HIl3-9mYDnNXW3FIl6J9SShWALRznIhL6g&_nc_ohc=vl4Dzhd6RdkQ7kNvwEqi9YV&_nc_oc=AdkKtYZsZ1_4jaii_fnD8fHRu9V9ra2nKHr2mnBBrf5huAuruI1_2PXqCTbrFL8Lwb8&_nc_zt=23&_nc_ht=scontent.fsrg5-3.fna&_nc_gid=HldG2gAtNnQA20e3-f1Naw&oh=00_AfMjBR030lHzYVIq72-ouOOuwgfZeLV1wLHbpYbRtR4yZg&oe=686A1743"
+                src="/hero.png"
                 alt="Fashion Muslim Modern"
-                className="w-full h-[500px] lg:h-[600px] object-cover"
+                className="w-full h-[500px] lg:h-[500px] object-cover"
               />
 
               {/* Floating Cards */}

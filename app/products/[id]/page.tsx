@@ -7,23 +7,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Star,
-  ArrowLeft,
-  Heart,
-  Share2,
-  ShoppingCart,
-  Truck,
-  Shield,
-  RotateCcw,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface Product {
@@ -41,7 +25,7 @@ interface Product {
   stock: number;
   featured: boolean;
   tags: string[];
-  // rating: number;
+  rating: number;
   totalReviews: number;
 }
 
@@ -51,8 +35,6 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -71,9 +53,7 @@ export default function ProductDetailPage() {
         setProduct(data);
         console.log("Fetched product:", data);
       } else {
-        // Fallback to demo product if API fails
-        // const demoProduct: Product = {};
-        // setProduct(demoProduct);
+        console.error("Failed to fetch product");
       }
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -161,11 +141,12 @@ export default function ProductDetailPage() {
                   animate={{ opacity: 1, x: 0 }}
                   className="space-y-4"
                 >
-                  <div className="h-[400px] w-full overflow-hidden rounded-lg">
+                  <div className="h-[500px] w-full overflow-hidden rounded-lg">
                     <img
                       src={
                         product.images[selectedImage] ||
-                        "/placeholder.svg?height=500&width=500"
+                        "/placeholder.svg?height=500&width=500" ||
+                        "/placeholder.svg"
                       }
                       alt={product.name}
                       className="w-full h-full object-cover"
@@ -214,28 +195,6 @@ export default function ProductDetailPage() {
                   {/* Product Name */}
                   <h1 className="text-3xl font-bold">{product.name}</h1>
 
-                  {/* Rating */}
-                  {/* <div className="flex items-center space-x-2">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-5 h-5 ${
-                            i < Math.floor(product.rating)
-                              ? "text-yellow-500 fill-current"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="font-medium">
-                      {product.rating.toFixed(1)}
-                    </span>
-                    <span className="text-muted-foreground">
-                      ({product.totalReviews} ulasan)
-                    </span>
-                  </div> */}
-
                   {/* Price */}
                   <div className="space-y-2">
                     <div className="flex items-center space-x-3">
@@ -267,58 +226,62 @@ export default function ProductDetailPage() {
                     {product.description}
                   </p>
 
-                  {/* Size Selection */}
-                  {product.sizes.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Ukuran:</label>
-                      <Select
-                        value={selectedSize}
-                        onValueChange={setSelectedSize}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih ukuran" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {product.sizes.map((size) => (
-                            <SelectItem key={size} value={size}>
-                              {size}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* Color Selection */}
-                  {product.colors.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Warna:</label>
-                      <Select
-                        value={selectedColor}
-                        onValueChange={setSelectedColor}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih warna" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {product.colors.map((color) => (
-                            <SelectItem key={color} value={color}>
-                              {color}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  <div className="flex items-center space-x-2">
-                    {product.fabric && (
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">Bahan:</span>
-                        <Badge variant="outline">{product.fabric}</Badge>
+                  {/* Available Sizes */}
+                  {product.sizes && product.sizes.length > 0 && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium">
+                        Ukuran Tersedia:
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {product.sizes.map((size) => (
+                          <Badge
+                            key={size}
+                            variant="outline"
+                            className="px-3 py-1 text-sm border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+                          >
+                            {size}
+                          </Badge>
+                        ))}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Available Colors */}
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium">
+                        Warna Tersedia:
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {product.colors.map((color) => (
+                          <Badge
+                            key={color}
+                            variant="outline"
+                            className="px-3 py-1 text-sm border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+                          >
+                            {color}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fabric Information */}
+                  {product.fabric && (
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Bahan:
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                        >
+                          {product.fabric}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Stock Info */}
                   <div className="flex items-center space-x-2">
@@ -338,69 +301,19 @@ export default function ProductDetailPage() {
                     </Badge>
                   </div>
 
-                  {/* Action Buttons */}
-                  {/* <div className="space-y-4">
-                    <div className="flex space-x-4">
-                      <Button
-                        size="lg"
-                        className="flex-1"
-                        disabled={product.stock === 0}
-                      >
-                        <ShoppingCart className="w-5 h-5 mr-2" />
-                        {product.stock > 0
-                          ? "Tambah ke Keranjang"
-                          : "Stok Habis"}
-                      </Button>
-                      <Button variant="outline" size="lg">
-                        <Heart className="w-5 h-5" />
-                      </Button>
-                      <Button variant="outline" size="lg">
-                        <Share2 className="w-5 h-5" />
-                      </Button>
-                    </div>
-
-                    {product.stock > 0 && (
-                      <Button variant="outline" size="lg" className="w-full">
-                        Beli Sekarang
-                      </Button>
-                    )}
-                  </div> */}
-
                   <div className="space-y-4">
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full"
+                      className="w-full bg-transparent border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => setShowModal(true)}
+                      disabled={product.stock === 0}
                     >
-                      Beli Sekarang
+                      {product.stock === 0
+                        ? "Stok Habis"
+                        : "Chat untuk Pemesanan"}
                     </Button>
                   </div>
-
-                  {/* Features */}
-                  {/* <div className="grid grid-cols-3 gap-4 pt-6 border-t">
-                    <div className="text-center">
-                      <Truck className="w-6 h-6 mx-auto mb-2 text-rose-600" />
-                      <p className="text-sm font-medium">Gratis Ongkir</p>
-                      <p className="text-xs text-muted-foreground">
-                        Min. pembelian 200k
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <Shield className="w-6 h-6 mx-auto mb-2 text-rose-600" />
-                      <p className="text-sm font-medium">Garansi Kualitas</p>
-                      <p className="text-xs text-muted-foreground">
-                        100% original
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <RotateCcw className="w-6 h-6 mx-auto mb-2 text-rose-600" />
-                      <p className="text-sm font-medium">Easy Return</p>
-                      <p className="text-xs text-muted-foreground">
-                        7 hari tukar barang
-                      </p>
-                    </div>
-                  </div> */}
 
                   {/* Tags */}
                   {product.tags.length > 0 && (
@@ -429,11 +342,11 @@ export default function ProductDetailPage() {
       <Footer />
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4 relative text-gray-800">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-white/30 dark:border-gray-700/30 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4 relative text-gray-800 dark:text-gray-200">
             {/* Tombol Tutup */}
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-2 right-3 text-black/70 hover:text-black text-2xl font-bold"
+              className="absolute top-2 right-3 text-black/70 dark:text-white/70 hover:text-black dark:hover:text-white text-2xl font-bold"
               aria-label="Tutup"
             >
               ×
@@ -458,7 +371,7 @@ export default function ProductDetailPage() {
 
             {/* Tombol WhatsApp */}
             <a
-              href="https://wa.me/6281234567890" 
+              href="https://wa.me/6281234567890"
               target="_blank"
               rel="noopener noreferrer"
             >

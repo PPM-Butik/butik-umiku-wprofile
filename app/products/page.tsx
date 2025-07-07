@@ -31,7 +31,7 @@ interface Product {
   images: string[];
   stock: number;
   featured: boolean;
-  rating: number;
+  // rating: number;
   totalReviews: number;
 }
 
@@ -309,7 +309,7 @@ export default function ProductsPage() {
                             </div>
                           )}
 
-                          <div className="flex items-center mb-3">
+                          {/* <div className="flex items-center mb-3">
                             <div className="flex items-center">
                               <Star className="w-4 h-4 text-yellow-500 fill-current" />
                               <span className="text-sm font-medium ml-1">
@@ -319,7 +319,7 @@ export default function ProductsPage() {
                             <span className="text-sm text-muted-foreground ml-2">
                               ({product.totalReviews} ulasan)
                             </span>
-                          </div>
+                          </div> */}
 
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">

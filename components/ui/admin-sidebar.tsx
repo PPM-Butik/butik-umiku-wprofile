@@ -6,11 +6,11 @@ import {
   Package,
   Tags,
   FileText,
-  Settings,
-  Users,
-  ShoppingCart,
-  BarChart3,
   LogOut,
+  // Settings,
+  // Users,
+  // ShoppingCart,
+  // BarChart3,
 } from "lucide-react"
 
 import {
@@ -65,27 +65,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       title: "Blog",
       href: "/admin/blog",
       icon: FileText,
-    },
-    {
-      title: "Pesanan",
-      href: "/admin/orders",
-      icon: ShoppingCart,
-    },
-    {
-      title: "Pelanggan",
-      href: "/admin/customers",
-      icon: Users,
-    },
-    {
-      title: "Laporan",
-      href: "/admin/reports",
-      icon: BarChart3,
-    },
-    {
-      title: "Pengaturan",
-      href: "/admin/settings",
-      icon: Settings,
-    },
+    }
   ]
 
   const userInitials = user?.name

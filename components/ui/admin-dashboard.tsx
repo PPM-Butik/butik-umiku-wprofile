@@ -67,7 +67,7 @@ export function AdminDashboard() {
     {
       title: "Total Produk",
       value: stats?.totalProducts.toString() || "-",
-      change: "+12%",
+      // change: "+12%",
       icon: Package,
       color: "text-blue-600",
       bgColor: "bg-blue-100 dark:bg-blue-900/30",
@@ -75,7 +75,7 @@ export function AdminDashboard() {
     {
       title: "Total Artikel",
       value: stats?.totalArticles.toString() || "-",
-      change: "+23%",
+      // change: "+23%",
       icon: FileText,
       color: "text-green-600",
       bgColor: "bg-green-100 dark:bg-green-900/30",
@@ -83,7 +83,7 @@ export function AdminDashboard() {
     {
       title: "Total Kategori",
       value: stats?.totalCategories.toString() || "-",
-      change: "+8%",
+      // change: "+8%",
       icon: Tags,
       color: "text-purple-600",
       bgColor: "bg-purple-100 dark:bg-purple-900/30",
@@ -174,7 +174,7 @@ export function AdminDashboard() {
                     ) : (
                       <>
                         <p className="text-2xl font-bold">{stat.value}</p>
-                        <p className="text-xs text-green-600 font-medium">{stat.change} dari bulan lalu</p>
+                        {/* <p className="text-xs text-green-600 font-medium">{stat.change} dari bulan lalu</p> */}
                       </>
                     )}
                   </div>
