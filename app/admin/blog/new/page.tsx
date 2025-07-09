@@ -268,7 +268,7 @@ export default function NewBlogPostPage() {
               </div>
 
               {/* Additional Images */}
-              <div>
+              {/* <div>
                 <Label>Gambar Tambahan</Label>
                 <ImageUpload
                   value={images}
@@ -277,7 +277,7 @@ export default function NewBlogPostPage() {
                   folder="blog/content"
                   disabled={loading}
                 />
-              </div>
+              </div> */}
 
               <Separator />
 
