@@ -148,7 +148,7 @@ export default function ProductsPage() {
                         />
                       </div>
                     </div>
-                    <Select
+                    {/* <Select
                       value={selectedCategory}
                       onValueChange={setSelectedCategory}
                     >
@@ -163,7 +163,7 @@ export default function ProductsPage() {
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </Select> */}
                     <Select value={sortBy} onValueChange={setSortBy}>
                       <SelectTrigger className="w-full lg:w-48">
                         <SelectValue placeholder="Urutkan" />
