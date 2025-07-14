@@ -340,7 +340,7 @@ export default function EditBlogPostPage() {
               </div>
 
               {/* Additional Images */}
-              <div>
+              {/* <div>
                 <Label>Gambar Tambahan</Label>
                 <ImageUpload
                   value={images}
@@ -349,7 +349,7 @@ export default function EditBlogPostPage() {
                   folder="blog/content"
                   disabled={loading}
                 />
-              </div>
+              </div> */}
 
               <Separator />
 
